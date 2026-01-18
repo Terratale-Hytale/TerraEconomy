@@ -31,7 +31,6 @@ public class TerratalePlugin extends JavaPlugin {
         // Inicializar base de datos con el sistema de modelos
         Model.initialize(getDataDirectory().toFile(), getLogger());
 
-        getCommandRegistry().registerCommand(new HelpCommand());
         getCommandRegistry().registerCommand(new MoneyCommand());
         getCommandRegistry().registerCommand(new BankCommand());
         getCommandRegistry().registerCommand(new AccountCommand());

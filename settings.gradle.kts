@@ -1,1 +1,1 @@
-rootProject.name = "Terratale"
+rootProject.name = "Terraeconomy"
