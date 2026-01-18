@@ -29,6 +29,7 @@ public class AccountCommand extends AbstractCommandCollection {
         addSubCommand(new AccountListSubCommand());
         addSubCommand(new AccountWithdrawSubCommand());
         addSubCommand(new AccountDepositSubCommand());
+        addSubCommand(new AccountTransferSubCommand());
         addSubCommand(new AccountInviteSubCommand());
         addSubCommand(new AccountInviteAcceptSubCommand());
         addSubCommand(new AccountInvitesSubCommand());
@@ -387,6 +388,144 @@ class AccountDepositSubCommand extends AbstractAsyncCommand {
             player.sendMessage(Message.raw("Monto neto: " + String.format("%.2f", netDeposit) + " monedas"));
             player.sendMessage(Message.raw("Nuevo balance: " + String.format("%.2f", account.getBalance()) + " monedas"));
         }
+
+        return CompletableFuture.completedFuture(null);
+    }
+}
+
+// Subcomando: /account transfer <from_account> <to_account> <amount>
+class AccountTransferSubCommand extends AbstractAsyncCommand {
+
+    private final RequiredArg<String> fromAccountArg;
+    private final RequiredArg<String> toAccountArg;
+    private final RequiredArg<String> amountArg;
+
+    public AccountTransferSubCommand() {
+        super("transfer", "Transfer money between accounts");
+        fromAccountArg = withRequiredArg("from_account", "Source Account Number", ArgTypes.STRING);
+        toAccountArg = withRequiredArg("to_account", "Destination Account Number", ArgTypes.STRING);
+        amountArg = withRequiredArg("amount", "Amount to transfer", ArgTypes.STRING);
+    }
+
+    @Override
+    @Nonnull
+    protected CompletableFuture<Void> executeAsync(@Nonnull CommandContext context) {
+        if (!(context.sender() instanceof Player)) {
+            context.sender().sendMessage(Message.raw("Este comando solo puede usarse en juego."));
+            return CompletableFuture.completedFuture(null);
+        }
+
+        String fromAccountNumber = fromAccountArg.get(context);
+        String toAccountNumber = toAccountArg.get(context);
+        String amountStr = amountArg.get(context);
+        
+        UUID playerUUID = context.sender().getUuid();
+        Player player = (Player) context.sender();
+
+        // Parsear cantidad
+        double amount;
+        try {
+            amount = Double.parseDouble(amountStr);
+            if (amount <= 0) {
+                player.sendMessage(Message.raw("La cantidad debe ser mayor a 0"));
+                return CompletableFuture.completedFuture(null);
+            }
+        } catch (NumberFormatException e) {
+            player.sendMessage(Message.raw("Cantidad inválida"));
+            return CompletableFuture.completedFuture(null);
+        }
+
+        // Buscar cuenta origen
+        BankAccount fromAccount = BankAccount.findByAccountNumber(fromAccountNumber);
+        if (fromAccount == null) {
+            player.sendMessage(Message.raw("Cuenta origen no encontrada"));
+            return CompletableFuture.completedFuture(null);
+        }
+
+        // Buscar cuenta destino
+        BankAccount toAccount = BankAccount.findByAccountNumber(toAccountNumber);
+        if (toAccount == null) {
+            player.sendMessage(Message.raw("Cuenta destino no encontrada"));
+            return CompletableFuture.completedFuture(null);
+        }
+
+        // Verificar que no sea la misma cuenta
+        if (fromAccount.getId().equals(toAccount.getId())) {
+            player.sendMessage(Message.raw("No puedes transferir a la misma cuenta"));
+            return CompletableFuture.completedFuture(null);
+        }
+
+        // Verificar que el jugador tenga acceso a la cuenta origen
+        if (!BankAccountOwner.getOwnersByAccount(fromAccount.getId()).contains(playerUUID)) {
+            player.sendMessage(Message.raw("No tienes acceso a la cuenta origen"));
+            return CompletableFuture.completedFuture(null);
+        }
+
+        // Buscar bancos
+        Bank fromBank = Bank.find(fromAccount.getBankId());
+        Bank toBank = Bank.find(toAccount.getBankId());
+        
+        if (fromBank == null || toBank == null) {
+            player.sendMessage(Message.raw("Error al encontrar los bancos"));
+            return CompletableFuture.completedFuture(null);
+        }
+
+        // Calcular comisión (usar comisión de cuenta origen o del banco origen)
+        double transferFee = fromAccount.getTransactionsFee() != null ? 
+            fromAccount.getTransactionsFee() : fromBank.getTransactionsFee();
+        double feeAmount = amount * (transferFee / 100.0);
+        double totalDeducted = amount + feeAmount;
+
+        // Verificar que hay suficiente balance
+        if (fromAccount.getBalance() < totalDeducted) {
+            player.sendMessage(Message.raw("Balance insuficiente"));
+            player.sendMessage(Message.raw("Balance actual: " + String.format("%.2f", fromAccount.getBalance()) + " monedas"));
+            player.sendMessage(Message.raw("Cantidad + comisión: " + String.format("%.2f", totalDeducted) + " monedas"));
+            return CompletableFuture.completedFuture(null);
+        }
+
+        // Realizar transferencia
+        fromAccount.setBalance(fromAccount.getBalance() - totalDeducted);
+        fromAccount.save();
+
+        toAccount.setBalance(toAccount.getBalance() + amount);
+        toAccount.save();
+
+        // Registrar transacciones
+        Transaction withdrawTransaction = new Transaction(
+            fromAccount.getId(),
+            "transfer_out",
+            totalDeducted,
+            playerUUID.toString()
+        );
+        withdrawTransaction.save();
+
+        Transaction depositTransaction = new Transaction(
+            toAccount.getId(),
+            "transfer_in",
+            amount,
+            playerUUID.toString()
+        );
+        depositTransaction.save();
+
+        // Agregar comisión al balance del banco origen
+        fromBank.setBalance(fromBank.getBalance() + feeAmount);
+        fromBank.save();
+
+        BankTransaction bankTransaction = new BankTransaction(
+            fromBank.getId(),
+            "transfer_fee",
+            feeAmount,
+            playerUUID.toString()
+        );
+        bankTransaction.save();
+
+        player.sendMessage(Message.raw("Transferencia exitosa!"));
+        player.sendMessage(Message.raw("De: " + fromAccountNumber + " (" + fromBank.getName() + ")"));
+        player.sendMessage(Message.raw("A: " + toAccountNumber + " (" + toBank.getName() + ")"));
+        player.sendMessage(Message.raw("Cantidad transferida: " + String.format("%.2f", amount) + " monedas"));
+        player.sendMessage(Message.raw("Comisión (" + transferFee + "%): " + String.format("%.2f", feeAmount) + " monedas"));
+        player.sendMessage(Message.raw("Nuevo balance cuenta origen: " + String.format("%.2f", fromAccount.getBalance()) + " monedas"));
 
         return CompletableFuture.completedFuture(null);
     }
