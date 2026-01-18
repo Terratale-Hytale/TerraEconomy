@@ -1,0 +1,9 @@
+{
+  "id": "terraeconomy",
+  "name": "TerraEconomy",
+  "version": "1.0.0",
+  "description": "Sistema de economía y bancos para Terratale",
+  "authors": ["Terratale Team"],
+  "main": "terratale.plugin.TerratalePlugin",
+  "dependencies": []
+}
