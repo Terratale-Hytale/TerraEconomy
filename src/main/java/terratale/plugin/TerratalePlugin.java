@@ -3,6 +3,7 @@ package terratale.plugin;
 import terratale.commands.AccountCommand;
 import terratale.commands.BankCommand;
 import terratale.commands.MoneyCommand;
+import terratale.commands.TerrataleCommand;
 import terratale.models.Model;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
@@ -33,6 +34,7 @@ public class TerratalePlugin extends JavaPlugin {
         getCommandRegistry().registerCommand(new MoneyCommand());
         getCommandRegistry().registerCommand(new BankCommand());
         getCommandRegistry().registerCommand(new AccountCommand());
+        getCommandRegistry().registerCommand(new TerrataleCommand());
         getLogger().at(Level.INFO).log("Plugin setup complete!");
     }
 

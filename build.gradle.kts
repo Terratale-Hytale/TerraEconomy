@@ -12,6 +12,7 @@ repositories {
 dependencies {
     compileOnly(files("libs/HytaleServer.jar"))
     implementation("org.xerial:sqlite-jdbc:3.47.1.0")
+    implementation("org.eclipse.jgit:org.eclipse.jgit:6.8.0.202311291450-r")
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
