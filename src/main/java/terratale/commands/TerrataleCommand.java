@@ -52,57 +52,24 @@ class UpdateSubCommand extends AbstractAsyncCommand {
                 }
 
                 // Paso 2: Clonar repositorio usando JGit (no requiere git instalado)
-                context.sender().sendMessage(Message.raw("[TerraEconomy] Clonando repositorio..."));
+                context.sender().sendMessage(Message.raw("[TerraEconomy] Descargando última versión..."));
                 
                 try {
                     Git git = Git.cloneRepository()
                         .setURI(REPO_URL)
                         .setDirectory(tempDir)
-                        // Para repositorio privado, descomenta estas líneas:
                         .setCredentialsProvider(new UsernamePasswordCredentialsProvider(GITHUB_USERNAME, GITHUB_TOKEN))
                         .call();
                     
                     git.close();
-                    context.sender().sendMessage(Message.raw("[TerraEconomy] Repositorio clonado exitosamente"));
+                    context.sender().sendMessage(Message.raw("[TerraEconomy] Descarga completada"));
                     
                 } catch (GitAPIException e) {
-                    context.sender().sendMessage(Message.raw("[TerraEconomy] Error al clonar repositorio: " + e.getMessage()));
+                    context.sender().sendMessage(Message.raw("[TerraEconomy] Error al descargar: " + e.getMessage()));
                     return;
                 }
 
-                // Paso 3: Compilar proyecto
-                context.sender().sendMessage(Message.raw("[TerraEconomy] Compilando proyecto..."));
-                
-                String gradlewCmd = System.getProperty("os.name").toLowerCase().contains("win") 
-                    ? "gradlew.bat" : "./gradlew";
-                
-                ProcessBuilder buildBuilder = new ProcessBuilder(
-                    gradlewCmd, "clean", "build", "--no-daemon"
-                );
-                buildBuilder.directory(tempDir);
-                buildBuilder.environment().put("JAVA_HOME", System.getProperty("java.home"));
-                
-                Process buildProcess = buildBuilder.start();
-                
-                // Mostrar output en tiempo real
-                BufferedReader reader = new BufferedReader(new InputStreamReader(buildProcess.getInputStream()));
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    if (line.contains("BUILD SUCCESSFUL") || line.contains("BUILD FAILED")) {
-                        context.sender().sendMessage(Message.raw("[TerraEconomy] " + line));
-                    }
-                }
-                
-                int buildExitCode = buildProcess.waitFor();
-
-                if (buildExitCode != 0) {
-                    String error = readProcessOutput(buildProcess.getErrorStream());
-                    context.sender().sendMessage(Message.raw("[TerraEconomy] Error al compilar: " + error));
-                    return;
-                }
-
-                context.sender().sendMessage(Message.raw("[TerraEconomy] Compilación exitosa"));
-                // Paso 4: Copiar JAR a carpeta de mods
+                // Paso 3: Copiar JAR a carpeta de mods
                 context.sender().sendMessage(Message.raw("[TerraEconomy] Instalando nueva versión..."));
                 
                 File buildJar = findJarFile(new File(tempDir, "build/libs"));
