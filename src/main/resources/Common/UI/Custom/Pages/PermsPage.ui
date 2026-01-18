@@ -1,0 +1,20 @@
+$C = "../Common.ui";
+
+Group {
+    Anchor: (Width: 1200, Height: 700);
+    Background: #1a1a2e(0.95);
+    LayoutMode: Top;
+    Padding: (Full: 20);
+
+    Label #Title {
+        Text: "Permissions";
+        Anchor: (Height: 40);
+        Style: (FontSize: 24, TextColor: #ffffff, Alignment: Center);
+    }
+
+    Label #PermsList {
+        Text: "";
+        Anchor: (Height: 30);
+        Style: (FontSize: 16, TextColor: #b4c8c9, Alignment: Center);
+    }
+}

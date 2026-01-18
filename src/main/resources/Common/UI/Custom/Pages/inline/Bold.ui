@@ -1,0 +1,12 @@
+Group {
+    LayoutMode: Left;
+
+    Label #Text {
+        Text: "";
+        Style: (
+            FontSize: 14,
+            TextColor: #b4c8c9,
+            RenderBold: true
+        );
+    }
+}

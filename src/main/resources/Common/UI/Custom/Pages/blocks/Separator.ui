@@ -1,0 +1,9 @@
+Group {
+    Anchor: (Height: 12);
+    Padding: (Top: 6, Bottom: 6);
+
+    Group {
+        Anchor: (Height: 2);
+        Background: #ffffff(0.50);
+    }
+}

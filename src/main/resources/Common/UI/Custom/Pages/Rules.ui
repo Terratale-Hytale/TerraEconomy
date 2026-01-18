@@ -1,0 +1,53 @@
+$C = "../Common.ui";
+
+@RulesButtonStyle = TextButtonStyle(
+    Default: (Background: #2b3542, LabelStyle: (FontSize: 13, TextColor: #96a9be, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center)),
+    Hovered: (Background: #3b4552, LabelStyle: (FontSize: 13, TextColor: #b6c9de, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center)),
+    Pressed: (Background: #1b2532, LabelStyle: (FontSize: 13, TextColor: #96a9be, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center))
+);
+
+Group {
+    Anchor: (Width: 1200, Height: 700);
+    Background: #1a1a2e(0.95);
+    LayoutMode: Top;
+    Padding: (Full: 20);
+
+    Label #Title {
+        Text: "Hello World";
+        Anchor: (Height: 40);
+        Style: (FontSize: 24, TextColor: #ffffff, Alignment: Center);
+    }
+
+    Label #Message {
+        Text: "My first Hytale UI!";
+        Anchor: (Height: 30);
+        Style: (FontSize: 16, TextColor: #b4c8c9, Alignment: Center);
+    }
+
+    Label #ExtraText {
+        Text: "";
+        Anchor: (Height: 20);
+        Style: (FontSize: 12, TextColor: #666666, Alignment: Center);
+    }
+
+    Group #ContentList {
+        LayoutMode: TopScrolling;
+        Background: #0a1119(0.5);
+        Padding: (Full: 6);
+        Anchor: (Height: 500);
+        ScrollbarStyle: (
+            Spacing: 6,
+            Size: 6,
+            Background: (TexturePath: "Common/Scrollbar.png", Border: 3),
+            Handle: (TexturePath: "Common/ScrollbarHandle.png", Border: 3),
+            HoveredHandle: (TexturePath: "Common/ScrollbarHandleHovered.png", Border: 3),
+            DraggedHandle: (TexturePath: "Common/ScrollbarHandleDragged.png", Border: 3)
+        );
+    }
+
+    TextButton #RulesButton {
+        Text: "PRUEBA";
+        Anchor: (Width: 100, Height: 36);
+        Style: @RulesButtonStyle;
+    }
+}

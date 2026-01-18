@@ -1,0 +1,14 @@
+$PrimaryTheme = "../PrimaryTheme.ui";
+
+@Heading4Style = $PrimaryTheme.@Heading4Style;
+@heading4Padding = $PrimaryTheme.@heading4Padding;
+
+Group {
+    LayoutMode: Left;
+
+    Label #Text {
+        Padding: (...@heading4Padding);
+        Text: "";
+        Style: (...@Heading4Style);
+    }
+}

@@ -1,0 +1,71 @@
+
+// --------------------
+// Colors
+// --------------------
+
+@TitleTextColor = #FFAC1C;
+
+@colorTitle = #FFAC1C;
+@colorHeading2 = #ffffff;
+@colorHeading3 = #d0d0d0;
+@colorHeading4 = #b0b0b0;
+@colorSeparator = #ffffff(0.50);
+
+// =========================
+// Font sizes
+// =========================
+@titleFontSize = 18;
+@heading2FontSize = 16;
+@heading3FontSize = 15;
+@heading4FontSize = 14;
+
+// =========================
+// Font styles
+// =========================
+@heading2Bold = true;
+@heading3Bold = true;
+@heading4Bold = true;
+
+// =========================
+// Headings padding
+// =========================
+
+@titlePadding = (Bottom: 8);
+@heading2Padding = (Bottom: 8);
+@heading3Padding = (Bottom: 8);
+@heading4Padding = (Bottom: 8);
+
+// =========================
+// Separator
+// =========================
+
+@separatorContainerHeight = 12;
+@separatorLineHeight = 2;
+
+// =========================
+// Templates
+// =========================
+
+@TitleStyle = (
+    FontSize: @titleFontSize,
+    TextColor: @colorTitle,
+    RenderBold: true
+);
+
+@Heading2Style = (
+    FontSize: @heading2FontSize,
+    TextColor: @colorHeading2,
+    RenderBold: @heading2Bold
+);
+
+@Heading3Style = (
+    FontSize: @heading3FontSize,
+    TextColor: @colorHeading3,
+    RenderBold: @heading3Bold
+);
+
+@Heading4Style = (
+    FontSize: @heading4FontSize,
+    TextColor: @colorHeading4,
+    RenderBold: @heading4Bold
+);
