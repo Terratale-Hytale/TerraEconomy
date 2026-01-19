@@ -21,7 +21,6 @@ build/resources/
 out/
 !**/src/main/**/out/
 !**/src/test/**/out/
-/libs/
 ### Eclipse ###
 .apt_generated
 .classpath
