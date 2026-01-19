@@ -46,6 +46,12 @@ class MoneyBalanceSubCommand extends AbstractAsyncCommand {
         
         double balance = user.getMoney();
         player.sendMessage(Message.raw("Tu balance en el bolsillo es: " + String.format("%.2f", balance) + " monedas"));
+
+        var econ = it.cassaforte.api.Cassaforte.getEconomy();
+        player.sendMessage(Message.raw("econ=" + (econ == null ? "null" : econ.getName() + " class=" + econ.getClass().getName())));
+        if (econ != null) {
+            player.sendMessage(Message.raw("balance=" + econ.getBalance(playerUUID)));
+        }
         
         return CompletableFuture.completedFuture(null);
     }

@@ -158,6 +158,37 @@ public class Bank extends Model {
         
         return null;
     }
+
+    public static List<Bank> findAll() {
+        List<Bank> banks = new ArrayList<>();
+        if (connection == null) {
+            logError("Cannot find banks: connection is null");
+            return banks;
+        }
+        
+        String sql = "SELECT * FROM banks";
+        
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            ResultSet rs = pstmt.executeQuery();
+            
+            while (rs.next()) {
+                banks.add(new Bank(
+                    rs.getInt("id"),
+                    rs.getString("name"),
+                    UUID.fromString(rs.getString("owner_uuid")),
+                    rs.getDouble("balance"),
+                    rs.getDouble("withdraw_fee"),
+                    rs.getDouble("deposit_fee"),
+                    rs.getDouble("transactions_fee")
+                ));
+            }
+        } catch (SQLException e) {
+            logError("Failed to find all banks: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
+        return banks;
+    }
     
     public void save() {
         if (connection == null) {
