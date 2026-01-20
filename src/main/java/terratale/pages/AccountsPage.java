@@ -40,11 +40,12 @@ public class AccountsPage extends InteractiveCustomUIPage<AccountsPage.BindingDa
     @Override
     public void build(@Nonnull Ref<EntityStore> ref, @Nonnull UICommandBuilder uiCommandBuilder, @Nonnull UIEventBuilder uiEventBuilder, @Nonnull Store<EntityStore> store) {
         uiCommandBuilder.append("Pages/Accounts.ui");
-        
 
         for (int i = 0; i < accounts.size(); i++) {
-            uiCommandBuilder.append("#Content", "Pages/Account.ui");
-            uiCommandBuilder.set("#Content[" + i + "] #AccountLabel.Text", accounts.get(i).getAccountNumber());
+            uiCommandBuilder.append("#ContentList", "Pages/Account.ui");
+            System.out.println("Adding account to UI: " + accounts.get(i).getAccountNumber());
+            uiCommandBuilder.set("#ContentList[" + i + "] #AccountLabel.Value", accounts.get(i).getAccountNumber());
+            uiCommandBuilder.set("#ContentList[" + i + "] #AccountText.Text", " - Banco: " + accounts.get(i).getBank().getName() + " - Saldo: " + String.format("%.2f", accounts.get(i).getBalance()) + " monedas");
         }
     }
 

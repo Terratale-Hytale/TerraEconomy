@@ -2,16 +2,25 @@ package terratale.commands;
 
 import terratale.models.Bank;
 import terratale.models.User;
+import terratale.pages.BanksPage;
 
+import com.hypixel.hytale.component.Ref;
+import com.hypixel.hytale.component.Store;
+import com.hypixel.hytale.protocol.packets.interface_.CustomPageLifetime;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.command.system.CommandContext;
 import com.hypixel.hytale.server.core.command.system.basecommands.AbstractAsyncCommand;
+import com.hypixel.hytale.server.core.command.system.basecommands.AbstractPlayerCommand;
+import com.hypixel.hytale.server.core.entity.entities.Player;
+import com.hypixel.hytale.server.core.universe.PlayerRef;
+import com.hypixel.hytale.server.core.universe.world.World;
+import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 
 import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-public class BanksCommand extends AbstractAsyncCommand {
+public class BanksCommand extends AbstractPlayerCommand {
 
     public BanksCommand() {
         super("banks", "List all created banks");
@@ -19,13 +28,19 @@ public class BanksCommand extends AbstractAsyncCommand {
 
     @Override
     @Nonnull
-    protected CompletableFuture<Void> executeAsync(@Nonnull CommandContext context) {
+    protected void execute(
+            @Nonnull CommandContext context,
+            @Nonnull Store<EntityStore> store,
+            @Nonnull Ref<EntityStore> ref,
+            @Nonnull PlayerRef playerRef,
+            @Nonnull World world
+    ) {
 
         List<Bank> banks = Bank.findAll();
+        Player player = (Player) context.sender();
 
         if (banks.isEmpty()) {
             context.sender().sendMessage(Message.raw("No hay bancos creados."));
-            return CompletableFuture.completedFuture(null);
         }
 
         context.sender().sendMessage(Message.raw("=== Bancos Disponibles ==="));
@@ -47,6 +62,11 @@ public class BanksCommand extends AbstractAsyncCommand {
             context.sender().sendMessage(Message.raw(""));
         }
 
-        return CompletableFuture.completedFuture(null);
+        BanksPage banksPage = new BanksPage(
+            playerRef, 
+            CustomPageLifetime.CanDismiss, 
+            banks);
+
+        player.getPageManager().openCustomPage(ref, store, banksPage);
     }
 }

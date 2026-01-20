@@ -1,0 +1,17 @@
+$C = "../Common.ui";
+
+Group #AccountComponent {
+    // Tamaño del bloque completo (ajústalo)
+    LayoutMode: Left;
+    Anchor: (Width: 600, Height: 50);
+
+    Label #BankText {
+        Style: (TextColor: #ffffff);
+        Text: "Text";
+        Anchor: (Width: 400, Height: 30);
+    }
+
+    $C.@TextButton #CreateAccount {
+        @Text = "Crear cuenta";
+    }
+}

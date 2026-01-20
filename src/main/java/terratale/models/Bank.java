@@ -62,6 +62,10 @@ public class Bank extends Model {
             e.printStackTrace();
         }
     }
+
+    public List<BankAccount> getAccounts() {
+        return BankAccount.findByBank(this.id);
+    }
     
     public static Bank find(int id) {
         if (connection == null) {

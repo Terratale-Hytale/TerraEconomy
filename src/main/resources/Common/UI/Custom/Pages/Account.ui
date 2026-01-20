@@ -1,16 +1,20 @@
-
 $C = "../Common.ui";
 
-Group #CarmelitasDelDiablo {
-    LayoutMode: MiddleCenter;
-    Background: #333333;
-    Anchor: (Top: 10);
-    Label #AccountLabel {
+Group #AccountComponent {
+    // Tamaño del bloque completo (ajústalo)
+    LayoutMode: Left;
+    Anchor: (Width: 600, Height: 50);
+
+    Label #AccountText {
         Style: (TextColor: #ffffff);
-        Padding: (Right: 100);
-        Text: "Cuenta OS1212341234";
+        Text: "Text";
+        Anchor: (Width: 400, Height: 30);
     }
-    $C.@TextButton #AccountButton {
-        Text: "Copiar";
+
+    $C.@TextField #AccountLabel {
+        Style: $C.@DefaultInputFieldStyle;
+        Background: $C.@InputBoxBackground;
+        // A la derecha de la label: 120 + 10 de margen = 130
+        Anchor: (Width: 190, Height: 30);
     }
 }

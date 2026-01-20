@@ -1,24 +1,24 @@
 $C = "../Common.ui";
 
-Group {
-  LayoutMode: Top;
-  Background: #2a2a2a;
-  Anchor: (Width: 800, Height: 500);
-  $C.@Container #Containercbd1355b {
-    ScrollbarStyle: $C.@DefaultScrollbarStyle;
-    LayoutMode: Top;
-    Background: #333333;
+$C.@PageOverlay {
 
-      Group #TitleGroup5e4a81b8 {
-        LayoutMode: Left;
-        $C.@Title #Title693ae57a {
-          @Text = "Tus cuentas";
-          Alignment: Center;
-          Style: (TextColor: #ffffff);
+  $C.@Container #AccountsContainer {
+    Anchor: (Width: 800, Height: 500);
+    ScrollbarStyle: $C.@DefaultScrollbarStyle;
+      #Title {
+        Group #ContainerHeader {
+          LayoutMode: Left;
+
+          $C.@Title #HeaderTitle {
+            @Text = "Tus cuentas";
+          }
         }
       }
-
-    Group #Content {
-    }
+      #Content {
+        Group #ContentList {
+          ScrollbarStyle: $C.@DefaultScrollbarStyle;
+          LayoutMode: TopScrolling;
+        }
+      }
   }
 }
