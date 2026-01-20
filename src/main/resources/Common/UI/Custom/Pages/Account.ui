@@ -1,0 +1,16 @@
+
+$C = "../Common.ui";
+
+Group #CarmelitasDelDiablo {
+    LayoutMode: MiddleCenter;
+    Background: #333333;
+    Anchor: (Top: 10);
+    Label #AccountLabel {
+        Style: (TextColor: #ffffff);
+        Padding: (Right: 100);
+        Text: "Cuenta OS1212341234";
+    }
+    $C.@TextButton #AccountButton {
+        Text: "Copiar";
+    }
+}

@@ -7,13 +7,22 @@ import terratale.models.BankAccountOwner;
 import terratale.models.Transaction;
 import terratale.models.BankTransaction;
 import terratale.models.User;
+import terratale.pages.AccountsPage;
+
+import com.hypixel.hytale.component.Ref;
+import com.hypixel.hytale.component.Store;
+import com.hypixel.hytale.protocol.packets.interface_.CustomPageLifetime;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.command.system.CommandContext;
 import com.hypixel.hytale.server.core.command.system.arguments.system.RequiredArg;
 import com.hypixel.hytale.server.core.command.system.arguments.types.ArgTypes;
 import com.hypixel.hytale.server.core.command.system.basecommands.AbstractAsyncCommand;
 import com.hypixel.hytale.server.core.command.system.basecommands.AbstractCommandCollection;
+import com.hypixel.hytale.server.core.command.system.basecommands.AbstractPlayerCommand;
 import com.hypixel.hytale.server.core.entity.entities.Player;
+import com.hypixel.hytale.server.core.universe.PlayerRef;
+import com.hypixel.hytale.server.core.universe.world.World;
+import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -87,7 +96,7 @@ class AccountCreateSubCommand extends AbstractAsyncCommand {
 }
 
 // Subcomando: /account list
-class AccountListSubCommand extends AbstractAsyncCommand {
+class AccountListSubCommand extends AbstractPlayerCommand {
 
     public AccountListSubCommand() {
         super("list", "List all your accounts");
@@ -95,10 +104,15 @@ class AccountListSubCommand extends AbstractAsyncCommand {
 
     @Override
     @Nonnull
-    protected CompletableFuture<Void> executeAsync(@Nonnull CommandContext context) {
+    protected void execute(
+            @Nonnull CommandContext context,
+            @Nonnull Store<EntityStore> store,
+            @Nonnull Ref<EntityStore> ref,
+            @Nonnull PlayerRef playerRef,
+            @Nonnull World world
+    ) {
         if (!(context.sender() instanceof Player)) {
             context.sender().sendMessage(Message.raw("Este comando solo puede usarse en juego."));
-            return CompletableFuture.completedFuture(null);
         }
 
         UUID playerUUID = context.sender().getUuid();
@@ -126,7 +140,13 @@ class AccountListSubCommand extends AbstractAsyncCommand {
             }
         }
 
-        return CompletableFuture.completedFuture(null);
+        AccountsPage page = new AccountsPage(
+            playerRef,
+            CustomPageLifetime.CanDismiss,
+            accounts
+        );
+
+        player.getPageManager().openCustomPage(ref, store, page);
     }
 }
 
