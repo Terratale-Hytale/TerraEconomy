@@ -5,31 +5,27 @@ Group #AccountComponent {
     LayoutMode: Left;
     Anchor: (Width: 600, Height: 50);
 
-    Label #BankText {
+    Label #Empty {
         Style: (TextColor: #ffffff);
-        Text: "Text";
+        Text: "";
         Anchor: (Width: 150, Height: 30);
     }
 
     Label #Deposit {
         Style: (TextColor: #ffffff);
-        Text: "Text";
+        Text: "Deposito";
         Anchor: (Width: 75, Height: 30);
     }
 
     Label #Withdraw {
         Style: (TextColor: #ffffff);
-        Text: "Text";
+        Text: "Retirada";
         Anchor: (Width: 75, Height: 30);
     }
 
     Label #Transfer {
         Style: (TextColor: #ffffff);
-        Text: "Text";
+        Text: "Transferencia";
         Anchor: (Width: 100, Height: 30);
-    }
-
-    $C.@TextButton #CreateAccount {
-        @Text = "Crear cuenta";
     }
 }

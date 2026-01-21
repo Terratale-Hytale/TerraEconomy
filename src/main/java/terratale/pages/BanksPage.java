@@ -50,18 +50,21 @@ public class BanksPage extends InteractiveCustomUIPage<BanksPage.UIEventPayload>
     public void build(@Nonnull Ref<EntityStore> ref, @Nonnull UICommandBuilder uiCommandBuilder,
             @Nonnull UIEventBuilder uiEventBuilder, @Nonnull Store<EntityStore> store) {
         uiCommandBuilder.append("Pages/Accounts.ui");
+        uiCommandBuilder.append("#ContentList", "Pages/BankInfo.ui");
 
         for (int i = 0; i < banks.size(); i++) {
             uiCommandBuilder.append("#ContentList", "Pages/Bank.ui");
-            uiCommandBuilder.set("#ContentList[" + i + "] #BankText.Text",
-                    "Banco: " + banks.get(i).getName() + " - Cuentas: " + banks.get(i).getAccounts().size());
+            uiCommandBuilder.set("#ContentList[" + (i + 1) + "] #BankText.Text", "Banco: " + banks.get(i).getName());
+            uiCommandBuilder.set("#ContentList[" + (i + 1) + "] #Deposit.Text", banks.get(i).getDepositFee() + "%");
+            uiCommandBuilder.set("#ContentList[" + (i + 1) + "] #Withdraw.Text", banks.get(i).getWithdrawFee() + "%");
+            uiCommandBuilder.set("#ContentList[" + (i + 1) + "] #Transfer.Text", banks.get(i).getTransactionsFee() + "%");
 
             EventData uiData = new EventData();
             uiData.events().put("ID", banks.get(i).getId().toString());
 
             uiEventBuilder.addEventBinding(
                     CustomUIEventBindingType.Activating,
-                    "#ContentList[" + i + "] #CreateAccount",
+                    "#ContentList[" + (i + 1) + "] #CreateAccount",
                     uiData,
                     false);
         }
