@@ -6,12 +6,12 @@
   "Main": "terratale.plugin.TerratalePlugin",
   "ServerVersion": "*",
   "Dependencies": {
-
-  },
-  "OptionalDependencies": {
     "com.cassaforte:Cassaforte": "*"
   },
+  "OptionalDependencies": {
+  },
   "LoadBefore": {
+    "com.hytale.towny:HytaleTowny": "*"
   },
   "DisabledByDefault": false,
   "IncludesAssetPack": true

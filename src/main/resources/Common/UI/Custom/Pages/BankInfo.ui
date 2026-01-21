@@ -7,7 +7,7 @@ Group #AccountComponent {
 
     Label #Empty {
         Style: (TextColor: #ffffff);
-        Text: "";
+        Text: "Banco";
         Anchor: (Width: 150, Height: 30);
     }
 

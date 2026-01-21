@@ -54,7 +54,7 @@ public class BanksPage extends InteractiveCustomUIPage<BanksPage.UIEventPayload>
 
         for (int i = 0; i < banks.size(); i++) {
             uiCommandBuilder.append("#ContentList", "Pages/Bank.ui");
-            uiCommandBuilder.set("#ContentList[" + (i + 1) + "] #BankText.Text", "Banco: " + banks.get(i).getName());
+            uiCommandBuilder.set("#ContentList[" + (i + 1) + "] #BankText.Text", banks.get(i).getName());
             uiCommandBuilder.set("#ContentList[" + (i + 1) + "] #Deposit.Text", banks.get(i).getDepositFee() + "%");
             uiCommandBuilder.set("#ContentList[" + (i + 1) + "] #Withdraw.Text", banks.get(i).getWithdrawFee() + "%");
             uiCommandBuilder.set("#ContentList[" + (i + 1) + "] #Transfer.Text", banks.get(i).getTransactionsFee() + "%");
