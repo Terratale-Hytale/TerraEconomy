@@ -663,7 +663,7 @@ class AccountInviteAcceptSubCommand extends AbstractAsyncCommand {
         BankAccount account = BankAccount.findByAccountNumber(accountNumber);
 
         if (account == null) {
-            player.sendMessage(Message.raw("§cCuenta no encontrada"));
+            player.sendMessage(Message.raw("Cuenta no encontrada"));
             return CompletableFuture.completedFuture(null);
         }
 

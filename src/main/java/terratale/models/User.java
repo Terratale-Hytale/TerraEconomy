@@ -37,7 +37,7 @@ public class User extends Model {
             CREATE TABLE IF NOT EXISTS users (
                 uuid TEXT PRIMARY KEY,
                 username TEXT NOT NULL,
-                money REAL DEFAULT 1000.0 NOT NULL,
+                money REAL DEFAULT 0.0 NOT NULL,
                 last_login INTEGER
             )
         """;
@@ -169,6 +169,28 @@ public class User extends Model {
             pstmt.executeUpdate();
         } catch (SQLException e) {
             logError("Failed to save user money: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    public void delete() {
+        if (connection == null) {
+            logError("Cannot delete user: connection is null");
+            return;
+        }
+        
+        String sql = "DELETE FROM users WHERE uuid = ?";
+        
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, uuid.toString());
+            int rowsAffected = pstmt.executeUpdate();
+            if (rowsAffected > 0) {
+                logInfo("User deleted successfully: " + uuid);
+            } else {
+                logError("No user found with uuid: " + uuid);
+            }
+        } catch (SQLException e) {
+            logError("Failed to delete user: " + e.getMessage());
             e.printStackTrace();
         }
     }

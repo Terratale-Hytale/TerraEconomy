@@ -1,5 +1,7 @@
 package terratale.plugin;
 
+import terratale.Helpers.ConfigManager;
+import terratale.Helpers.PluginConfig;
 import terratale.commands.AccountCommand;
 import terratale.commands.BankCommand;
 import terratale.commands.BanksCommand;
@@ -19,6 +21,7 @@ public class TerratalePlugin extends JavaPlugin {
     private final JavaPluginInit init; // <--
     private TerrataleEconomyService economyService;
     private TerrataleCassaforteEconomy cassaforteEconomy;
+    private ConfigManager configManager;
 
     public TerratalePlugin(@NonNullDecl JavaPluginInit init) {
         super(init);
@@ -35,6 +38,7 @@ public class TerratalePlugin extends JavaPlugin {
 
         PluginFolders.setup(this);
         Model.initialize(getDataDirectory().toFile(), getLogger());
+        configManager = new ConfigManager(getDataDirectory().toFile());
 
         getCommandRegistry().registerCommand(new MoneyCommand());
         getCommandRegistry().registerCommand(new BankCommand());
@@ -44,6 +48,10 @@ public class TerratalePlugin extends JavaPlugin {
         setupCassaforteIntegration();
 
         getLogger().at(Level.INFO).log("Plugin setup complete!");
+    }
+
+    public PluginConfig config() {
+        return configManager.getConfig();
     }
 
     private void setupCassaforteIntegration() {

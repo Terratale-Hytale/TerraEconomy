@@ -2,7 +2,9 @@ package terratale.commands;
 
 import terratale.models.Bank;
 import terratale.models.BankAccount;
+import terratale.models.BankTransaction;
 import terratale.models.User;
+import terratale.plugin.TerratalePlugin;
 
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.command.system.CommandContext;
@@ -27,6 +29,8 @@ public class BankCommand extends AbstractCommandCollection {
         addSubCommand(new BankBalanceSubCommand());
         addSubCommand(new BankListSubCommand());
         addSubCommand(new AccountsListSubCommand());
+        addSubCommand(new BankDepositSubCommand());
+        addSubCommand(new BankWithdrawSubCommand());
     }
 }
 
@@ -62,9 +66,25 @@ class BankCreateSubCommand extends AbstractAsyncCommand {
         String playerName = context.sender().getDisplayName();
 
         User user = User.findOrCreate(playerUUID, playerName);
+        Double bankCost = TerratalePlugin.get().config().bankCreationCost;
+
+        if (user.getMoney() < bankCost) {
+            context.sender().sendMessage(Message.raw("No tienes suficientes monedas para crear un banco. Costo: " + bankCost + " monedas."));
+            return CompletableFuture.completedFuture(null);
+        }
 
         Bank bank = new Bank(bankName, playerUUID);
         bank.save();
+
+        String gouvernmentAccount = TerratalePlugin.get().config().gouvernmentNumberAccount;
+        BankAccount govAccount = BankAccount.findByAccountNumber(gouvernmentAccount);
+        if (govAccount != null) {
+            govAccount.setBalance(govAccount.getBalance() + bankCost);
+            govAccount.save();
+
+            BankTransaction govTransaction = new BankTransaction(govAccount.getBankId(), "deposit", bankCost, playerUUID.toString());
+            govTransaction.save();
+        }
 
         context.sender().sendMessage(Message.raw("Banco creado exitosamente!"));
         context.sender().sendMessage(Message.raw("Nombre: " + bankName));
@@ -280,6 +300,166 @@ class AccountsListSubCommand extends AbstractAsyncCommand {
                     " (Balance: " + String.format("%.2f", acc.getBalance()) + " monedas)"
                 ));
             }
+        return CompletableFuture.completedFuture(null);
+    }
+}
+
+// /bank deposit <bank_id> <amount>
+class BankDepositSubCommand extends AbstractAsyncCommand {
+
+    private final RequiredArg<Integer> bankIdArg;
+    private final RequiredArg<Double> amountArg;
+
+    public BankDepositSubCommand() {
+        super("deposit", "Deposit money into your bank");
+        bankIdArg = withRequiredArg("bank_id", "Bank ID", ArgTypes.INTEGER);
+        amountArg = withRequiredArg("amount", "Amount to deposit", ArgTypes.DOUBLE);
+    }
+
+    @Override
+    @Nonnull
+    protected CompletableFuture<Void> executeAsync(@Nonnull CommandContext context) {
+
+        if (!(context.sender() instanceof Player)) {
+            context.sender().sendMessage(Message.raw("Este comando solo puede usarse en juego."));
+            return CompletableFuture.completedFuture(null);
+        }
+
+        int bankId = bankIdArg.get(context);
+        double amount = amountArg.get(context);
+
+        if (amount <= 0) {
+            context.sender().sendMessage(Message.raw("La cantidad debe ser positiva."));
+            return CompletableFuture.completedFuture(null);
+        }
+
+        Bank bank = Bank.find(bankId);
+        if (bank == null) {
+            context.sender().sendMessage(Message.raw("Banco no encontrado."));
+            return CompletableFuture.completedFuture(null);
+        }
+
+        UUID playerUUID = context.sender().getUuid();
+
+        if (!bank.getOwnerUuid().equals(playerUUID)) {
+            context.sender().sendMessage(Message.raw("No eres el dueño de este banco."));
+            return CompletableFuture.completedFuture(null);
+        }
+
+        User user = User.find(playerUUID);
+        if (user == null) {
+            context.sender().sendMessage(Message.raw("Usuario no encontrado."));
+            return CompletableFuture.completedFuture(null);
+        }
+
+        if (user.getMoney() < amount) {
+            context.sender().sendMessage(Message.raw("No tienes suficientes monedas."));
+            return CompletableFuture.completedFuture(null);
+        }
+
+        double depositFee = bank.getDepositFee();
+        double feeAmount = amount * (depositFee / 100.0);
+        double actualDeposit = amount - feeAmount;
+
+        // Update balances
+        user.setMoney(user.getMoney() - amount);
+        bank.setBalance(bank.getBalance() + actualDeposit);
+
+        // Save changes
+        user.saveMoney();
+        bank.save();
+
+        // Record transaction
+        BankTransaction transaction = new BankTransaction(bankId, "deposit", actualDeposit, playerUUID.toString());
+        transaction.save();
+
+        context.sender().sendMessage(Message.raw("Depósito realizado exitosamente!"));
+        context.sender().sendMessage(Message.raw("Cantidad depositada: " + String.format("%.2f", actualDeposit) + " monedas"));
+        if (feeAmount > 0) {
+            context.sender().sendMessage(Message.raw("Comisión aplicada: " + String.format("%.2f", feeAmount) + " monedas (" + depositFee + "%)"));
+        }
+        context.sender().sendMessage(Message.raw("Nuevo balance del banco: " + String.format("%.2f", bank.getBalance()) + " monedas"));
+
+        return CompletableFuture.completedFuture(null);
+    }
+}
+
+// /bank withdraw <bank_id> <amount>
+class BankWithdrawSubCommand extends AbstractAsyncCommand {
+
+    private final RequiredArg<Integer> bankIdArg;
+    private final RequiredArg<Double> amountArg;
+
+    public BankWithdrawSubCommand() {
+        super("withdraw", "Withdraw money from your bank");
+        bankIdArg = withRequiredArg("bank_id", "Bank ID", ArgTypes.INTEGER);
+        amountArg = withRequiredArg("amount", "Amount to withdraw", ArgTypes.DOUBLE);
+    }
+
+    @Override
+    @Nonnull
+    protected CompletableFuture<Void> executeAsync(@Nonnull CommandContext context) {
+
+        if (!(context.sender() instanceof Player)) {
+            context.sender().sendMessage(Message.raw("Este comando solo puede usarse en juego."));
+            return CompletableFuture.completedFuture(null);
+        }
+
+        int bankId = bankIdArg.get(context);
+        double amount = amountArg.get(context);
+
+        if (amount <= 0) {
+            context.sender().sendMessage(Message.raw("La cantidad debe ser positiva."));
+            return CompletableFuture.completedFuture(null);
+        }
+
+        Bank bank = Bank.find(bankId);
+        if (bank == null) {
+            context.sender().sendMessage(Message.raw("Banco no encontrado."));
+            return CompletableFuture.completedFuture(null);
+        }
+
+        UUID playerUUID = context.sender().getUuid();
+
+        if (!bank.getOwnerUuid().equals(playerUUID)) {
+            context.sender().sendMessage(Message.raw("No eres el dueño de este banco."));
+            return CompletableFuture.completedFuture(null);
+        }
+
+        User user = User.find(playerUUID);
+        if (user == null) {
+            context.sender().sendMessage(Message.raw("Usuario no encontrado."));
+            return CompletableFuture.completedFuture(null);
+        }
+
+        double withdrawFee = bank.getWithdrawFee();
+        double feeAmount = amount * (withdrawFee / 100.0);
+        double actualWithdraw = amount - feeAmount;
+
+        if (bank.getBalance() < actualWithdraw) {
+            context.sender().sendMessage(Message.raw("El banco no tiene suficientes fondos."));
+            return CompletableFuture.completedFuture(null);
+        }
+
+        // Update balances
+        bank.setBalance(bank.getBalance() - actualWithdraw);
+        user.setMoney(user.getMoney() + actualWithdraw);
+
+        // Save changes
+        bank.save();
+        user.saveMoney();
+
+        // Record transaction
+        BankTransaction transaction = new BankTransaction(bankId, "withdraw", actualWithdraw, playerUUID.toString());
+        transaction.save();
+
+        context.sender().sendMessage(Message.raw("Retiro realizado exitosamente!"));
+        context.sender().sendMessage(Message.raw("Cantidad retirada: " + String.format("%.2f", actualWithdraw) + " monedas"));
+        if (feeAmount > 0) {
+            context.sender().sendMessage(Message.raw("Comisión aplicada: " + String.format("%.2f", feeAmount) + " monedas (" + withdrawFee + "%)"));
+        }
+        context.sender().sendMessage(Message.raw("Nuevo balance del banco: " + String.format("%.2f", bank.getBalance()) + " monedas"));
+
         return CompletableFuture.completedFuture(null);
     }
 }

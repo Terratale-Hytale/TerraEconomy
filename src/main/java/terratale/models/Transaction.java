@@ -151,6 +151,33 @@ public class Transaction extends Model {
         }
     }
     
+    public void delete() {
+        if (connection == null) {
+            logError("Cannot delete transaction: connection is null");
+            return;
+        }
+        
+        if (id == null) {
+            logError("Cannot delete transaction: id is null");
+            return;
+        }
+        
+        String sql = "DELETE FROM transactions WHERE id = ?";
+        
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setInt(1, id);
+            int rowsAffected = pstmt.executeUpdate();
+            if (rowsAffected > 0) {
+                logInfo("Transaction deleted successfully: " + id);
+            } else {
+                logError("No transaction found with id: " + id);
+            }
+        } catch (SQLException e) {
+            logError("Failed to delete transaction: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
     // Getters
     public Integer getId() { return id; }
     public int getAccountId() { return accountId; }

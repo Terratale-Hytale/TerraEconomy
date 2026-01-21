@@ -248,6 +248,33 @@ public class Bank extends Model {
         }
     }
     
+    public void delete() {
+        if (connection == null) {
+            logError("Cannot delete bank: connection is null");
+            return;
+        }
+        
+        if (id == null) {
+            logError("Cannot delete bank: id is null");
+            return;
+        }
+        
+        String sql = "DELETE FROM banks WHERE id = ?";
+        
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setInt(1, id);
+            int rowsAffected = pstmt.executeUpdate();
+            if (rowsAffected > 0) {
+                logInfo("Bank deleted successfully: " + id);
+            } else {
+                logError("No bank found with id: " + id);
+            }
+        } catch (SQLException e) {
+            logError("Failed to delete bank: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
     // Getters y Setters
     public Integer getId() { return id; }
     public String getName() { return name; }
