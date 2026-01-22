@@ -31,6 +31,7 @@ public class BankCommand extends AbstractCommandCollection {
         addSubCommand(new AccountsListSubCommand());
         addSubCommand(new BankDepositSubCommand());
         addSubCommand(new BankWithdrawSubCommand());
+        addSubCommand(new BankDeleteSubCommand());
     }
 }
 
@@ -459,6 +460,102 @@ class BankWithdrawSubCommand extends AbstractAsyncCommand {
             context.sender().sendMessage(Message.raw("Comisión aplicada: " + String.format("%.2f", feeAmount) + " monedas (" + withdrawFee + "%)"));
         }
         context.sender().sendMessage(Message.raw("Nuevo balance del banco: " + String.format("%.2f", bank.getBalance()) + " monedas"));
+
+        return CompletableFuture.completedFuture(null);
+    }
+}
+
+// /bank delete <bank_id>
+class BankDeleteSubCommand extends AbstractAsyncCommand {
+
+    private final RequiredArg<Integer> bankIdArg;
+
+    public BankDeleteSubCommand() {
+        super("delete", "Delete a bank and all its accounts");
+        bankIdArg = withRequiredArg("bank_id", "Bank ID", ArgTypes.INTEGER);
+    }
+
+    @Override
+    @Nonnull
+    protected CompletableFuture<Void> executeAsync(@Nonnull CommandContext context) {
+
+        if (!(context.sender() instanceof Player)) {
+            context.sender().sendMessage(Message.raw("Este comando solo puede usarse en juego."));
+            return CompletableFuture.completedFuture(null);
+        }
+
+        int bankId = bankIdArg.get(context);
+        Bank bank = Bank.find(bankId);
+
+        if (bank == null) {
+            context.sender().sendMessage(Message.raw("Banco no encontrado."));
+            return CompletableFuture.completedFuture(null);
+        }
+
+        UUID playerUUID = context.sender().getUuid();
+
+        // Obtener cuenta del gobierno
+        String gouvernmentAccount = TerratalePlugin.get().config().gouvernmentNumberAccount;
+        BankAccount govAccount = BankAccount.findByAccountNumber(gouvernmentAccount);
+
+        if (govAccount == null) {
+            context.sender().sendMessage(Message.raw("Error: No se encontró la cuenta del gobierno."));
+            return CompletableFuture.completedFuture(null);
+        }
+
+        // Obtener todas las cuentas del banco
+        List<BankAccount> accounts = bank.getAccounts();
+        double totalTransferred = 0.0;
+
+        // Procesar cada cuenta
+        for (BankAccount account : accounts) {
+            // Transferir el balance de la cuenta al gobierno
+            if (account.getBalance() > 0) {
+                totalTransferred += account.getBalance();
+                govAccount.setBalance(govAccount.getBalance() + account.getBalance());
+            }
+
+            // Eliminar los owners de la cuenta
+            BankAccountOwner.deleteByAccount(account.getId());
+
+            // Eliminar las transacciones de la cuenta
+            List<Transaction> transactions = Transaction.findByAccount(account.getId());
+            for (Transaction transaction : transactions) {
+                transaction.delete();
+            }
+
+            // Eliminar la cuenta
+            account.delete();
+        }
+
+        // Guardar la cuenta del gobierno con el nuevo balance
+        if (totalTransferred > 0) {
+            govAccount.save();
+            
+            // Registrar transacción en la cuenta del gobierno
+            BankTransaction govTransaction = new BankTransaction(
+                govAccount.getBankId(), 
+                "bank_deletion", 
+                totalTransferred, 
+                playerUUID.toString()
+            );
+            govTransaction.save();
+        }
+
+        // Eliminar todas las transacciones del banco
+        List<BankTransaction> bankTransactions = BankTransaction.findByBank(bankId);
+        for (BankTransaction transaction : bankTransactions) {
+            transaction.delete();
+        }
+
+        // Eliminar el banco
+        bank.delete();
+
+        context.sender().sendMessage(Message.raw("Banco eliminado exitosamente!"));
+        context.sender().sendMessage(Message.raw("Cuentas eliminadas: " + accounts.size()));
+        if (totalTransferred > 0) {
+            context.sender().sendMessage(Message.raw("Fondos transferidos al gobierno: " + String.format("%.2f", totalTransferred) + " monedas"));
+        }
 
         return CompletableFuture.completedFuture(null);
     }
