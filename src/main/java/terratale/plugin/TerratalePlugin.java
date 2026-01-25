@@ -6,6 +6,7 @@ import terratale.commands.AccountCommand;
 import terratale.commands.BankCommand;
 import terratale.commands.BanksCommand;
 import terratale.commands.MoneyCommand;
+import terratale.commands.ReloadCommand;
 import terratale.models.Model;
 import terratale.plugin.integrations.cassaforte.TerrataleEconomyService;
 import terratale.plugin.integrations.cassaforte.TerrataleCassaforteEconomy;
@@ -39,11 +40,13 @@ public class TerratalePlugin extends JavaPlugin {
         PluginFolders.setup(this);
         Model.initialize(getDataDirectory().toFile(), getLogger());
         configManager = new ConfigManager(getDataDirectory().toFile());
+        configManager.load();
 
         getCommandRegistry().registerCommand(new MoneyCommand());
         getCommandRegistry().registerCommand(new BankCommand());
         getCommandRegistry().registerCommand(new BanksCommand());
         getCommandRegistry().registerCommand(new AccountCommand());
+        getCommandRegistry().registerCommand(new ReloadCommand());
 
         setupCassaforteIntegration();
 
@@ -52,6 +55,10 @@ public class TerratalePlugin extends JavaPlugin {
 
     public PluginConfig config() {
         return configManager.getConfig();
+    }
+
+    public ConfigManager getConfigManager() {
+        return configManager;
     }
 
     private void setupCassaforteIntegration() {

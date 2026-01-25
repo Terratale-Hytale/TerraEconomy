@@ -1,5 +1,6 @@
 package terratale.models;
 
+import terratale.plugin.TerratalePlugin;
 import java.io.File;
 import java.sql.*;
 import java.util.logging.Level;
@@ -13,19 +14,37 @@ public abstract class Model {
         logger = loggerInstance;
         
         try {
-            // Cargar el driver de SQLite
-            Class.forName("org.sqlite.JDBC");
+            // Verificar si la configuración de MySQL está completa
+            boolean useMySQL = isMySQLConfigured();
             
-            if (!dataFolder.exists()) {
-                boolean created = dataFolder.mkdirs();
-                logInfo("Data folder created: " + created);
+            if (useMySQL) {
+                // Usar MySQL
+                Class.forName("com.mysql.cj.jdbc.Driver");
+                
+                String url = "jdbc:mysql://" + TerratalePlugin.get().config().sqlConnectionIp + 
+                           "/" + TerratalePlugin.get().config().sqlDatabaseName + 
+                           "?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC";
+                
+                logInfo("Connecting to MySQL database: " + TerratalePlugin.get().config().sqlConnectionIp + 
+                       "/" + TerratalePlugin.get().config().sqlDatabaseName);
+                connection = DriverManager.getConnection(url, 
+                    TerratalePlugin.get().config().sqlUsername, 
+                    TerratalePlugin.get().config().sqlPassword);
+            } else {
+                // Usar SQLite como fallback
+                Class.forName("org.sqlite.JDBC");
+                
+                if (!dataFolder.exists()) {
+                    boolean created = dataFolder.mkdirs();
+                    logInfo("Data folder created: " + created);
+                }
+                
+                File dbFile = new File(dataFolder, "terratale.db");
+                String url = "jdbc:sqlite:" + dbFile.getAbsolutePath();
+                
+                logInfo("Connecting to SQLite database: " + dbFile.getAbsolutePath());
+                connection = DriverManager.getConnection(url);
             }
-            
-            File dbFile = new File(dataFolder, "terratale.db");
-            String url = "jdbc:sqlite:" + dbFile.getAbsolutePath();
-            
-            logInfo("Connecting to database: " + dbFile.getAbsolutePath());
-            connection = DriverManager.getConnection(url);
             
             if (connection != null) {
                 logInfo("Database connection established!");
@@ -34,11 +53,29 @@ public abstract class Model {
                 logError("Failed to establish database connection!");
             }
         } catch (ClassNotFoundException e) {
-            logError("SQLite JDBC driver not found: " + e.getMessage());
+            logError("Database JDBC driver not found: " + e.getMessage());
             e.printStackTrace();
         } catch (SQLException e) {
             logError("Failed to initialize database: " + e.getMessage());
             e.printStackTrace();
+        }
+    }
+    
+    private static boolean isMySQLConfigured() {
+        try {
+            String ip = TerratalePlugin.get().config().sqlConnectionIp;
+            String dbName = TerratalePlugin.get().config().sqlDatabaseName;
+            String username = TerratalePlugin.get().config().sqlUsername;
+            String password = TerratalePlugin.get().config().sqlPassword;
+            
+            // Verificar que todos los campos estén configurados (no null y no vacíos)
+            return ip != null && !ip.trim().isEmpty() &&
+                   dbName != null && !dbName.trim().isEmpty() &&
+                   username != null && !username.trim().isEmpty() &&
+                   password != null; // La contraseña puede estar vacía
+        } catch (Exception e) {
+            logError("Error checking MySQL configuration: " + e.getMessage());
+            return false;
         }
     }
     

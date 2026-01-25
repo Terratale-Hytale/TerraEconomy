@@ -16,6 +16,7 @@ dependencies {
     compileOnly(files("libs/HytaleServer.jar"))
     compileOnly(files("libs/Cassaforte-0.1.3.jar"))
     implementation("org.xerial:sqlite-jdbc:3.47.1.0")
+    implementation("mysql:mysql-connector-java:8.0.33")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.17.2")
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")

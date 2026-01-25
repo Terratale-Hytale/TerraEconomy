@@ -7,7 +7,7 @@ build/classes/
 build/generated/
 build/tmp/
 build/resources/
-
+/server/
 
 
 ### IntelliJ IDEA ###
