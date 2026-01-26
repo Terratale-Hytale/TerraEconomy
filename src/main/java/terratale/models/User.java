@@ -5,6 +5,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import com.hypixel.hytale.server.core.modules.accesscontrol.ban.Ban;
+
+import terratale.plugin.TerratalePlugin;
+
 public class User extends Model {
     
     private UUID uuid;
@@ -15,7 +19,7 @@ public class User extends Model {
     public User(UUID uuid, String username) {
         this.uuid = uuid;
         this.username = username;
-        this.money = 1000.0;
+        this.money = TerratalePlugin.get().config().initialMoney;
         this.lastLogin = System.currentTimeMillis();
     }
     
@@ -26,31 +30,6 @@ public class User extends Model {
         this.lastLogin = lastLogin;
     }
     
-    // Crear la tabla de usuarios
-    protected static void createTable() {
-        if (connection == null) {
-            logError("Cannot create users table: connection is null");
-            return;
-        }
-        
-        String createUsersTable = """
-            CREATE TABLE IF NOT EXISTS users (
-                uuid TEXT PRIMARY KEY,
-                username TEXT NOT NULL,
-                money REAL DEFAULT 0.0 NOT NULL,
-                last_login INTEGER
-            )
-        """;
-        
-        try (Statement stmt = connection.createStatement()) {
-            stmt.execute(createUsersTable);
-            logInfo("Users table created/verified!");
-        } catch (SQLException e) {
-            logError("Failed to create users table: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
-    
     // Buscar o crear un usuario
     public static User findOrCreate(UUID uuid, String username) {
         User user = find(uuid);
@@ -58,6 +37,27 @@ public class User extends Model {
         if (user == null) {
             user = new User(uuid, username);
             user.save();
+            String account = TerratalePlugin.get().config().gouvernmentNumberAccount;
+
+            BankAccount govAccount = BankAccount.findByAccountNumber(account);
+
+            if (govAccount != null) {
+                // Dar dinero inicial desde la cuenta del gobierno
+                double initialMoney = TerratalePlugin.get().config().initialMoney;
+                govAccount.setBalance(govAccount.getBalance() - initialMoney);
+
+                Transaction transaction = new Transaction(
+                    govAccount.getId(),
+                    "withdrawal",
+                    initialMoney,
+                    user.getUuid().toString()
+                );
+
+                transaction.save();
+                govAccount.save();
+            } else {
+                logError("Government account not found: " + account);
+            }
         } else {
             // Actualizar username y lastLogin
             user.setUsername(username);
@@ -133,14 +133,26 @@ public class User extends Model {
             return;
         }
         
-        String sql = """
-            INSERT INTO users (uuid, username, money, last_login) 
-            VALUES (?, ?, ?, ?)
-            ON CONFLICT(uuid) DO UPDATE SET 
-                username = excluded.username,
-                money = excluded.money,
-                last_login = excluded.last_login
-        """;
+        String sql;
+        if (isMySQL) {
+            sql = """
+                INSERT INTO users (uuid, username, money, last_login) 
+                VALUES (?, ?, ?, ?)
+                ON DUPLICATE KEY UPDATE 
+                    username = VALUES(username),
+                    money = VALUES(money),
+                    last_login = VALUES(last_login)
+            """;
+        } else {
+            sql = """
+                INSERT INTO users (uuid, username, money, last_login) 
+                VALUES (?, ?, ?, ?)
+                ON CONFLICT(uuid) DO UPDATE SET 
+                    username = excluded.username,
+                    money = excluded.money,
+                    last_login = excluded.last_login
+            """;
+        }
         
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setString(1, uuid.toString());

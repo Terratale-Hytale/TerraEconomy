@@ -36,7 +36,7 @@ public class BanksCommand extends AbstractPlayerCommand {
             @Nonnull World world
     ) {
 
-        List<Bank> banks = Bank.findAll();
+        List<Bank> banks = Bank.findAllPublics();
         Player player = (Player) context.sender();
 
         if (banks.isEmpty()) {

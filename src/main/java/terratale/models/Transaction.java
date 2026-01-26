@@ -30,34 +30,6 @@ public class Transaction extends Model {
         this.userUuid = userUuid;
     }
     
-    protected static void createTable() {
-        if (connection == null) {
-            logError("Cannot create transactions table: connection is null");
-            return;
-        }
-        
-        String createTransactionsTable = """
-            CREATE TABLE IF NOT EXISTS transactions (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_uuid TEXT,
-                account_id INTEGER,
-                type TEXT NOT NULL,
-                amount REAL NOT NULL,
-                timestamp INTEGER,
-                FOREIGN KEY(account_id) REFERENCES bank_accounts(id),
-                FOREIGN KEY(user_uuid) REFERENCES users(uuid)
-            )
-        """;
-        
-        try (Statement stmt = connection.createStatement()) {
-            stmt.execute(createTransactionsTable);
-            logInfo("Transactions table created/verified!");
-        } catch (SQLException e) {
-            logError("Failed to create transactions table: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
-    
     public static Transaction find(int id) {
         if (connection == null) {
             logError("Cannot find transaction: connection is null");

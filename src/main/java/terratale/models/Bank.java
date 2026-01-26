@@ -14,6 +14,7 @@ public class Bank extends Model {
     private double withdrawFee;
     private double depositFee;
     private double transactionsFee;
+    private String visibility;
     
     public Bank(String name, UUID ownerUuid) {
         this.name = name;
@@ -22,10 +23,11 @@ public class Bank extends Model {
         this.withdrawFee = 0.0;
         this.depositFee = 0.0;
         this.transactionsFee = 0.0;
+        this.visibility = "public";
     }
     
     private Bank(Integer id, String name, UUID ownerUuid, double balance, 
-                 double withdrawFee, double depositFee, double transactionsFee) {
+                 double withdrawFee, double depositFee, double transactionsFee, String visibility) {
         this.id = id;
         this.name = name;
         this.ownerUuid = ownerUuid;
@@ -33,34 +35,7 @@ public class Bank extends Model {
         this.withdrawFee = withdrawFee;
         this.depositFee = depositFee;
         this.transactionsFee = transactionsFee;
-    }
-    
-    protected static void createTable() {
-        if (connection == null) {
-            logError("Cannot create banks table: connection is null");
-            return;
-        }
-        
-        String createBanksTable = """
-            CREATE TABLE IF NOT EXISTS banks (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                owner_uuid TEXT NOT NULL,
-                balance REAL DEFAULT 0.0 NOT NULL,
-                withdraw_fee REAL DEFAULT 0.0 NOT NULL,
-                deposit_fee REAL DEFAULT 0.0 NOT NULL,
-                transactions_fee REAL DEFAULT 0.0 NOT NULL,
-                FOREIGN KEY(owner_uuid) REFERENCES users(uuid)
-            )
-        """;
-        
-        try (Statement stmt = connection.createStatement()) {
-            stmt.execute(createBanksTable);
-            logInfo("Banks table created/verified!");
-        } catch (SQLException e) {
-            logError("Failed to create banks table: " + e.getMessage());
-            e.printStackTrace();
-        }
+        this.visibility = visibility;
     }
 
     public List<BankAccount> getAccounts() {
@@ -87,7 +62,8 @@ public class Bank extends Model {
                     rs.getDouble("balance"),
                     rs.getDouble("withdraw_fee"),
                     rs.getDouble("deposit_fee"),
-                    rs.getDouble("transactions_fee")
+                    rs.getDouble("transactions_fee"),
+                    rs.getString("visibility")
                 );
             }
         } catch (SQLException e) {
@@ -119,7 +95,8 @@ public class Bank extends Model {
                     rs.getDouble("balance"),
                     rs.getDouble("withdraw_fee"),
                     rs.getDouble("deposit_fee"),
-                    rs.getDouble("transactions_fee")
+                    rs.getDouble("transactions_fee"),
+                    rs.getString("visibility")
                 ));
             }
         } catch (SQLException e) {
@@ -150,7 +127,8 @@ public class Bank extends Model {
                     rs.getDouble("balance"),
                     rs.getDouble("withdraw_fee"),
                     rs.getDouble("deposit_fee"),
-                    rs.getDouble("transactions_fee")
+                    rs.getDouble("transactions_fee"),
+                    rs.getString("visibility")
                 );
 
 
@@ -183,7 +161,40 @@ public class Bank extends Model {
                     rs.getDouble("balance"),
                     rs.getDouble("withdraw_fee"),
                     rs.getDouble("deposit_fee"),
-                    rs.getDouble("transactions_fee")
+                    rs.getDouble("transactions_fee"),
+                    rs.getString("visibility")
+                ));
+            }
+        } catch (SQLException e) {
+            logError("Failed to find all banks: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
+        return banks;
+    }
+
+    public static List<Bank> findAllPublics() {
+        List<Bank> banks = new ArrayList<>();
+        if (connection == null) {
+            logError("Cannot find banks: connection is null");
+            return banks;
+        }
+        
+        String sql = "SELECT * FROM banks WHERE visibility = 'public'";
+        
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            ResultSet rs = pstmt.executeQuery();
+            
+            while (rs.next()) {
+                banks.add(new Bank(
+                    rs.getInt("id"),
+                    rs.getString("name"),
+                    UUID.fromString(rs.getString("owner_uuid")),
+                    rs.getDouble("balance"),
+                    rs.getDouble("withdraw_fee"),
+                    rs.getDouble("deposit_fee"),
+                    rs.getDouble("transactions_fee"),
+                    rs.getString("visibility")
                 ));
             }
         } catch (SQLException e) {
@@ -194,6 +205,7 @@ public class Bank extends Model {
         return banks;
     }
     
+    
     public void save() {
         if (connection == null) {
             logError("Cannot save bank: connection is null");
@@ -203,8 +215,8 @@ public class Bank extends Model {
         if (id == null) {
             // Insert
             String sql = """
-                INSERT INTO banks (name, owner_uuid, balance, withdraw_fee, deposit_fee, transactions_fee) 
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT INTO banks (name, owner_uuid, balance, withdraw_fee, deposit_fee, transactions_fee, visibility) 
+                VALUES (?, ?, ?, ?, ?, ?, ?)
             """;
             
             try (PreparedStatement pstmt = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -214,6 +226,7 @@ public class Bank extends Model {
                 pstmt.setDouble(4, withdrawFee);
                 pstmt.setDouble(5, depositFee);
                 pstmt.setDouble(6, transactionsFee);
+                pstmt.setString(7, visibility);
                 pstmt.executeUpdate();
                 
                 ResultSet rs = pstmt.getGeneratedKeys();
@@ -228,8 +241,8 @@ public class Bank extends Model {
             // Update
             String sql = """
                 UPDATE banks SET name = ?, owner_uuid = ?, balance = ?, 
-                withdraw_fee = ?, deposit_fee = ?, transactions_fee = ? 
-                WHERE id = ?
+                withdraw_fee = ?, deposit_fee = ?, transactions_fee = ?,
+                visibility = ? WHERE id = ?
             """;
             
             try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
@@ -239,7 +252,8 @@ public class Bank extends Model {
                 pstmt.setDouble(4, withdrawFee);
                 pstmt.setDouble(5, depositFee);
                 pstmt.setDouble(6, transactionsFee);
-                pstmt.setInt(7, id);
+                pstmt.setString(7, visibility);
+                pstmt.setInt(8, id);
                 pstmt.executeUpdate();
             } catch (SQLException e) {
                 logError("Failed to update bank: " + e.getMessage());
@@ -289,6 +303,8 @@ public class Bank extends Model {
     public void setDepositFee(double depositFee) { this.depositFee = depositFee; }
     public double getTransactionsFee() { return transactionsFee; }
     public void setTransactionsFee(double transactionsFee) { this.transactionsFee = transactionsFee; }
+    public String getVisibility() { return visibility; }
+    public void setVisibility(String visibility) { this.visibility = visibility; }
     
     public void addBalance(double amount) { this.balance += amount; }
     public void removeBalance(double amount) { this.balance = Math.max(0, this.balance - amount); }

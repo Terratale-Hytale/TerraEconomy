@@ -9,35 +9,18 @@ public class BankAccountOwner extends Model {
     
     private int accountId;
     private UUID ownerUuid;
+    private String permission;
     
     public BankAccountOwner(int accountId, UUID ownerUuid) {
         this.accountId = accountId;
         this.ownerUuid = ownerUuid;
+        this.permission = "owner"; // Valor por defecto
     }
     
-    protected static void createTable() {
-        if (connection == null) {
-            logError("Cannot create bank_accounts_owners table: connection is null");
-            return;
-        }
-        
-        String createOwnersTable = """
-            CREATE TABLE IF NOT EXISTS bank_accounts_owners (
-                account_id INTEGER NOT NULL,
-                owner_uuid TEXT NOT NULL,
-                FOREIGN KEY(account_id) REFERENCES bank_accounts(id),
-                FOREIGN KEY(owner_uuid) REFERENCES users(uuid),
-                PRIMARY KEY(account_id, owner_uuid)
-            )
-        """;
-        
-        try (Statement stmt = connection.createStatement()) {
-            stmt.execute(createOwnersTable);
-            logInfo("Bank account owners table created/verified!");
-        } catch (SQLException e) {
-            logError("Failed to create bank_accounts_owners table: " + e.getMessage());
-            e.printStackTrace();
-        }
+    public BankAccountOwner(int accountId, UUID ownerUuid, String permission) {
+        this.accountId = accountId;
+        this.ownerUuid = ownerUuid;
+        this.permission = permission != null ? permission : "owner";
     }
     
     public static List<UUID> getOwnersByAccount(int accountId) {
@@ -95,13 +78,14 @@ public class BankAccountOwner extends Model {
         }
         
         String sql = """
-            INSERT OR IGNORE INTO bank_accounts_owners (account_id, owner_uuid) 
-            VALUES (?, ?)
+            INSERT OR REPLACE INTO bank_accounts_owners (account_id, owner_uuid, permission) 
+            VALUES (?, ?, ?)
         """;
         
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setInt(1, accountId);
             pstmt.setString(2, ownerUuid.toString());
+            pstmt.setString(3, permission);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             logError("Failed to save bank account owner: " + e.getMessage());
@@ -147,4 +131,5 @@ public class BankAccountOwner extends Model {
     // Getters
     public int getAccountId() { return accountId; }
     public UUID getOwnerUuid() { return ownerUuid; }
+    public String getPermission() { return permission; }
 }

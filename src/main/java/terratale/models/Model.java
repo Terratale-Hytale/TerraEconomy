@@ -2,6 +2,7 @@ package terratale.models;
 
 import terratale.plugin.TerratalePlugin;
 import java.io.File;
+import java.io.InputStream;
 import java.sql.*;
 import java.util.logging.Level;
 
@@ -9,6 +10,7 @@ public abstract class Model {
     
     protected static Connection connection;
     protected static Object logger;
+    public static boolean isMySQL = false;
     
     public static void initialize(File dataFolder, Object loggerInstance) {
         logger = loggerInstance;
@@ -47,6 +49,7 @@ public abstract class Model {
             }
             
             if (connection != null) {
+                isMySQL = useMySQL;
                 logInfo("Database connection established!");
                 createTables();
             } else {
@@ -72,7 +75,7 @@ public abstract class Model {
             return ip != null && !ip.trim().isEmpty() &&
                    dbName != null && !dbName.trim().isEmpty() &&
                    username != null && !username.trim().isEmpty() &&
-                   password != null; // La contraseña puede estar vacía
+                   password != null && !password.trim().isEmpty(); // La contraseña puede estar vacía
         } catch (Exception e) {
             logError("Error checking MySQL configuration: " + e.getMessage());
             return false;
@@ -85,14 +88,70 @@ public abstract class Model {
             return;
         }
         
-        // Crear tablas en el orden correcto por dependencias
-        User.createTable();
-        Bank.createTable();
-        BankAccount.createTable();
-        BankAccountOwner.createTable();
-        Transaction.createTable();
-        BankTransaction.createTable();
-        AccountInvitation.createTable();
+        // Ejecutar migraciones desde archivos
+        String dbType = isMySQL ? "mysql" : "sqlite";
+        String[] migrations = {
+            "users",
+            "banks", 
+            "bank_accounts",
+            "bank_accounts_owners",
+            "transactions",
+            "bank_transactions",
+            "account_invitations",
+            "bank_invitations"
+        };
+        
+        for (String migration : migrations) {
+            executeMigration(dbType + "_" + migration + ".sql");
+        }
+    }
+    
+    private static void executeMigration(String fileName) {
+        try {
+            String path = "/migrations/" + fileName;
+            InputStream is = Model.class.getResourceAsStream(path);
+            if (is == null) {
+                logError("Archivo de migración no encontrado: " + path);
+                return;
+            }
+            
+            String content = new String(is.readAllBytes());
+            // Split into lines and remove comments
+            String[] lines = content.split("\n");
+            StringBuilder sqlBuilder = new StringBuilder();
+            for (String line : lines) {
+                line = line.trim();
+                if (!line.isEmpty() && !line.startsWith("--")) {
+                    sqlBuilder.append(line).append("\n");
+                }
+            }
+            String sql = sqlBuilder.toString().trim();
+            
+            // Deshabilitar auto-commit para ejecución por lotes
+            boolean originalAutoCommit = connection.getAutoCommit();
+            connection.setAutoCommit(false);
+            
+            try (Statement stmt = connection.createStatement()) {
+                if (!sql.isEmpty()) {
+                    logInfo("Ejecutando migración: " + fileName);
+                    stmt.execute(sql);
+                }
+                connection.commit(); // Confirmar la transacción
+                logInfo("Migración confirmada: " + fileName);
+            } catch (SQLException e) {
+                connection.rollback(); // Revertir en caso de error
+                logError("Error al ejecutar migración " + fileName + ": " + e.getMessage());
+                throw e;
+            } finally {
+                connection.setAutoCommit(originalAutoCommit); // Restaurar auto-commit original
+            }
+            
+            logInfo("Migración ejecutada: " + fileName);
+            
+        } catch (Exception e) {
+            logError("Error al ejecutar migración " + fileName + ": " + e.getMessage());
+            e.printStackTrace();
+        }
     }
     
     public static void close() {

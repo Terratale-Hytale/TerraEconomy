@@ -4,6 +4,7 @@ import terratale.models.AccountInvitation;
 import terratale.models.Bank;
 import terratale.models.BankAccount;
 import terratale.models.BankAccountOwner;
+import terratale.models.BankInvitation;
 import terratale.models.Transaction;
 import terratale.models.BankTransaction;
 import terratale.models.User;
@@ -77,9 +78,20 @@ class AccountCreateSubCommand extends AbstractAsyncCommand {
             return CompletableFuture.completedFuture(null);
         }
 
+        BankInvitation invitation = BankInvitation.findByBankAndUser(bank.getId(), playerUUID);
+
+        if (bank.getVisibility().equals("private") && invitation == null) {
+            if (player != null) {
+                player.sendMessage(Message.raw("No tienes permiso para crear una cuenta en este banco."));
+            }
+            return CompletableFuture.completedFuture(null);
+        } 
+
         // Crear la cuenta
         BankAccount account = new BankAccount(bank.getId());
         account.save();
+
+        invitation.delete();
 
         BankAccountOwner ownerLink = new BankAccountOwner(account.getId(), playerUUID);
         ownerLink.save();
@@ -642,7 +654,7 @@ class AccountInviteAcceptSubCommand extends AbstractAsyncCommand {
 
     public AccountInviteAcceptSubCommand() {
         super("accept", "Accept an account invitation");
-        accountIdArg = withRequiredArg("account_number", "Account ID", ArgTypes.STRING);
+        accountIdArg = withRequiredArg("account_number", "Account number", ArgTypes.STRING);
     }
 
     @Override

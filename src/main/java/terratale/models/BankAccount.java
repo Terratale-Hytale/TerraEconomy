@@ -35,34 +35,6 @@ public class BankAccount extends Model {
         this.depositFee = depositFee;
         this.transactionsFee = transactionsFee;
     }
-    
-    protected static void createTable() {
-        if (connection == null) {
-            logError("Cannot create bank_accounts table: connection is null");
-            return;
-        }
-        
-        String createAccountsTable = """
-            CREATE TABLE IF NOT EXISTS bank_accounts (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                bank_id INTEGER NOT NULL,
-                account_number TEXT,
-                balance REAL DEFAULT 0.0 NOT NULL,
-                withdraw_fee REAL,
-                deposit_fee REAL,
-                transactions_fee REAL,
-                FOREIGN KEY(bank_id) REFERENCES banks(id)
-            )
-        """;
-        
-        try (Statement stmt = connection.createStatement()) {
-            stmt.execute(createAccountsTable);
-            logInfo("Bank accounts table created/verified!");
-        } catch (SQLException e) {
-            logError("Failed to create bank_accounts table: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
 
     public Bank getBank() {
         return Bank.find(this.bankId);

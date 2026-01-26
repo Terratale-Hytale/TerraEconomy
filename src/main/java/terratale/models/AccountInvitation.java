@@ -28,34 +28,6 @@ public class AccountInvitation extends Model {
         this.timestamp = timestamp;
     }
     
-    protected static void createTable() {
-        if (connection == null) {
-            logError("Cannot create account_invitations table: connection is null");
-            return;
-        }
-        
-        String createInvitationsTable = """
-            CREATE TABLE IF NOT EXISTS account_invitations (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                account_id INTEGER NOT NULL,
-                invited_uuid TEXT NOT NULL,
-                inviter_uuid TEXT NOT NULL,
-                timestamp INTEGER,
-                FOREIGN KEY(account_id) REFERENCES bank_accounts(id),
-                FOREIGN KEY(invited_uuid) REFERENCES users(uuid),
-                FOREIGN KEY(inviter_uuid) REFERENCES users(uuid)
-            )
-        """;
-        
-        try (Statement stmt = connection.createStatement()) {
-            stmt.execute(createInvitationsTable);
-            logInfo("Account invitations table created/verified!");
-        } catch (SQLException e) {
-            logError("Failed to create account_invitations table: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
-    
     public static AccountInvitation find(int id) {
         if (connection == null) {
             logError("Cannot find account invitation: connection is null");
@@ -246,7 +218,7 @@ public class AccountInvitation extends Model {
     
     public boolean accept() {
         // Crear el vínculo en bank_accounts_owners
-        BankAccountOwner owner = new BankAccountOwner(accountId, invitedUuid);
+        BankAccountOwner owner = new BankAccountOwner(accountId, invitedUuid, "member");
         owner.save();
         
         // Eliminar la invitación

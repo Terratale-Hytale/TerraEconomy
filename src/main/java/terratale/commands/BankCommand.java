@@ -3,6 +3,7 @@ package terratale.commands;
 import terratale.models.Bank;
 import terratale.models.BankAccount;
 import terratale.models.BankAccountOwner;
+import terratale.models.BankInvitation;
 import terratale.models.BankTransaction;
 import terratale.models.Transaction;
 import terratale.models.User;
@@ -34,6 +35,7 @@ public class BankCommand extends AbstractCommandCollection {
         addSubCommand(new BankDepositSubCommand());
         addSubCommand(new BankWithdrawSubCommand());
         addSubCommand(new BankDeleteSubCommand());
+        addSubCommand(new BankInviteSubCommand());
     }
 }
 
@@ -102,14 +104,14 @@ class BankSetSubCommand extends AbstractAsyncCommand {
 
     private final RequiredArg<Integer> bankIdArg;
     private final RequiredArg<String> feeTypeArg;
-    private final RequiredArg<Double> valueArg;
+    private final RequiredArg<String> valueArg;
 
     public BankSetSubCommand() {
-        super("set", "Set bank fees");
+        super("set", "Set bank configs");
 
         bankIdArg = withRequiredArg("bank_id", "Bank ID", ArgTypes.INTEGER);
-        feeTypeArg = withRequiredArg("fee_type", "Fee type (withdrawal_fee/deposit_fee/transfer_fee)", ArgTypes.STRING);
-        valueArg = withRequiredArg("value", "Fee value (0-100)", ArgTypes.DOUBLE);
+        feeTypeArg = withRequiredArg("fee_type", "Fee type (withdrawal_fee/deposit_fee/transfer_fee/visibility)", ArgTypes.STRING);
+        valueArg = withRequiredArg("value", "Fee value (0-100)", ArgTypes.STRING);
     }
 
     @Override
@@ -123,11 +125,21 @@ class BankSetSubCommand extends AbstractAsyncCommand {
 
         int bankId = bankIdArg.get(context);
         String feeType = feeTypeArg.get(context);
-        double value = valueArg.get(context);
+        String value = valueArg.get(context);
+        double valueDouble = 0.0;
 
-        if (value < 0 || value > 100) {
-            context.sender().sendMessage(Message.raw("El valor debe estar entre 0 y 100"));
-            return CompletableFuture.completedFuture(null);
+        if (!feeType.equals("visibility")) {
+            try {
+                valueDouble = Double.parseDouble(value);
+            } catch (NumberFormatException e) {
+                context.sender().sendMessage(Message.raw("Valor de comisión inválido. Debe ser un número."));
+                return CompletableFuture.completedFuture(null);
+            }
+
+            if (valueDouble < 0 || valueDouble > 100) {
+                context.sender().sendMessage(Message.raw("El valor de la comisión debe estar entre 0 y 100."));
+                return CompletableFuture.completedFuture(null);
+            }
         }
 
         Bank bank = Bank.find(bankId);
@@ -145,19 +157,28 @@ class BankSetSubCommand extends AbstractAsyncCommand {
 
         switch (feeType.toLowerCase()) {
             case "withdrawal_fee" -> {
-                bank.setWithdrawFee(value);
+                bank.setWithdrawFee(valueDouble);
                 context.sender().sendMessage(Message.raw("Comisión de retiro actualizada a " + value + "%"));
             }
             case "deposit_fee" -> {
-                bank.setDepositFee(value);
+                bank.setDepositFee(valueDouble);
                 context.sender().sendMessage(Message.raw("Comisión de depósito actualizada a " + value + "%"));
             }
             case "transfer_fee" -> {
-                bank.setTransactionsFee(value);
+                bank.setTransactionsFee(valueDouble);
                 context.sender().sendMessage(Message.raw("Comisión de transferencia actualizada a " + value + "%"));
             }
+            case "visibility" -> {
+                String visibilityValue = value.toLowerCase();
+                if (!visibilityValue.equals("public") && !visibilityValue.equals("private")) {
+                    context.sender().sendMessage(Message.raw("Visibilidad inválida. Usa: public o private"));
+                    return CompletableFuture.completedFuture(null);
+                }
+                bank.setVisibility(visibilityValue);
+                context.sender().sendMessage(Message.raw("Visibilidad del banco actualizada a " + visibilityValue));
+            }
             default -> {
-                context.sender().sendMessage(Message.raw("Tipo de comisión inválido. Usa: withdrawal_fee, deposit_fee o transfer_fee"));
+                context.sender().sendMessage(Message.raw("Tipo de configuración inválido. Usa: withdrawal_fee, deposit_fee, transfer_fee o visibility"));
                 return CompletableFuture.completedFuture(null);
             }
         }
@@ -462,6 +483,51 @@ class BankWithdrawSubCommand extends AbstractAsyncCommand {
             context.sender().sendMessage(Message.raw("Comisión aplicada: " + String.format("%.2f", feeAmount) + " monedas (" + withdrawFee + "%)"));
         }
         context.sender().sendMessage(Message.raw("Nuevo balance del banco: " + String.format("%.2f", bank.getBalance()) + " monedas"));
+
+        return CompletableFuture.completedFuture(null);
+    }
+}
+
+class BankInviteSubCommand extends AbstractAsyncCommand {
+
+    private final RequiredArg<Integer> bankIdArg;
+    private final RequiredArg<String> targetPlayerArg;
+
+    public BankInviteSubCommand() {
+        super("invite", "Invite a player to your bank");
+        bankIdArg = withRequiredArg("bank_id", "Bank ID", ArgTypes.INTEGER);
+        targetPlayerArg = withRequiredArg("player_name", "Target Player Name", ArgTypes.STRING);
+    }
+
+    @Override
+    @Nonnull
+    protected CompletableFuture<Void> executeAsync(@Nonnull CommandContext context) {
+
+        if (!(context.sender() instanceof Player)) {
+            context.sender().sendMessage(Message.raw("Este comando solo puede usarse en juego."));
+            return CompletableFuture.completedFuture(null);
+        }
+
+        int bankId = bankIdArg.get(context);
+        String targetPlayerName = targetPlayerArg.get(context);
+
+        Bank bank = Bank.find(bankId);
+        if (bank == null) {
+            context.sender().sendMessage(Message.raw("Banco no encontrado."));
+            return CompletableFuture.completedFuture(null);
+        }
+
+        UUID playerUUID = context.sender().getUuid();
+
+        if (!bank.getOwnerUuid().equals(playerUUID)) {
+            context.sender().sendMessage(Message.raw("No eres el dueño de este banco."));
+            return CompletableFuture.completedFuture(null);
+        }
+
+        BankInvitation invitation = new BankInvitation(bankId, playerUUID);
+        invitation.save();
+        
+        context.sender().sendMessage(Message.raw("Invitación enviada a " + targetPlayerName + " para unirse al banco #" + bankId));
 
         return CompletableFuture.completedFuture(null);
     }

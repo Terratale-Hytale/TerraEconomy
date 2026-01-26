@@ -101,16 +101,17 @@ class MoneySetSubCommand extends AbstractAsyncCommand {
 // /money withdraw <amount>
 class MoneyWithdrawSubCommand extends AbstractAsyncCommand {
 
-    private final RequiredArg<Integer> amountArg;
+    private final RequiredArg<Double> amountArg;
 
     // Ajusta esto al ID REAL de tu item. Ejemplos comunes:
     // "Terratale_Coin"  (como tú lo llamas)
     // "terratale:coin"  (si usas namespace)
     private static final String COIN_ITEM_ID = "Terratale_Coin";
+    private static final String CENT_ITEM_ID = "Terratale_Cent";
 
     public MoneyWithdrawSubCommand() {
         super("withdraw", "Withdraw money as Terratale_Coin items");
-        amountArg = withRequiredArg("amount", "Amount to withdraw", ArgTypes.INTEGER);
+        amountArg = withRequiredArg("amount", "Amount to withdraw", ArgTypes.DOUBLE);
     }
 
     @Override
@@ -124,23 +125,26 @@ class MoneyWithdrawSubCommand extends AbstractAsyncCommand {
         Player player = (Player) context.sender();
         UUID playerUUID = context.sender().getUuid();
         String playerName = player.getDisplayName();
-        int amount = amountArg.get(context);
+        Double totalAmount = amountArg.get(context);
+        int amount = (int) Math.floor(totalAmount);
+        Double cents = totalAmount % 1.0;
+        player.sendMessage(Message.raw("Intentando retirar: " + totalAmount + " monedas (" + amount + " " + COIN_ITEM_ID + " y " + String.format("%.0f", cents * 100) + " " + CENT_ITEM_ID + ")"));
 
-        if (amount <= 0) {
-            player.sendMessage(Message.raw("La cantidad debe ser un número entero positivo."));
+        if (totalAmount <= 0) {
+            player.sendMessage(Message.raw("La cantidad debe ser un número positivo."));
             return CompletableFuture.completedFuture(null);
         }
 
         User user = User.findOrCreate(playerUUID, playerName);
         double balance = user.getMoney();
 
-        if (balance < amount) {
+        if (balance < totalAmount) {
             player.sendMessage(Message.raw("No tienes suficiente dinero. Tu balance es: " + String.format("%.2f", balance) + " monedas"));
             return CompletableFuture.completedFuture(null);
         }
 
         // Restar el dinero
-        user.setMoney(balance - amount);
+        user.setMoney(balance - totalAmount);
         user.saveMoney();
 
         // Dar items al inventario (API actual: ItemStack por ID + cantidad)
@@ -149,9 +153,14 @@ class MoneyWithdrawSubCommand extends AbstractAsyncCommand {
         try {
             ItemStack coinStack = new ItemStack(COIN_ITEM_ID, amount);
             ItemContainer invContainer = inventory.getStorage();
+
+            if (cents > 0) {
+                ItemStack centStack = new ItemStack(CENT_ITEM_ID, (int) Math.round(cents * 100));
+                invContainer.addItemStack(centStack);
+            }
             invContainer.addItemStack(coinStack);
 
-            player.sendMessage(Message.raw("Has retirado " + amount + " monedas como items " + COIN_ITEM_ID + "."));
+            player.sendMessage(Message.raw("Has retirado " + totalAmount + "."));
         } catch (Exception e) {
             user.setMoney(balance);
             user.saveMoney();
@@ -166,6 +175,7 @@ class MoneyWithdrawSubCommand extends AbstractAsyncCommand {
 class MoneyDepositSubCommand extends AbstractAsyncCommand {
 
     private static final String COIN_ITEM_ID = "Terratale_Coin";
+    private static final String CENT_ITEM_ID = "Terratale_Cent";
 
     public MoneyDepositSubCommand() {
         super("deposit", "Deposit all Terratale_Coin items from inventory to money");
@@ -196,42 +206,45 @@ class MoneyDepositSubCommand extends AbstractAsyncCommand {
         }
 
         List<SlotQty> toRemove = new ArrayList<>();
-        final int[] totalDeposited = {0};
+        final double[] totalDeposited = {0.0};
 
         container.forEach((slot, stack) -> {
             if (stack == null || stack.isEmpty()) return;
 
-            if (COIN_ITEM_ID.equals(stack.getItemId())) { 
-                int qty = stack.getQuantity();
-                if (qty > 0) {
+            int qty = stack.getQuantity();
+            if (qty > 0) {
+                if (COIN_ITEM_ID.equals(stack.getItemId())) { 
                     totalDeposited[0] += qty;
+                    toRemove.add(new SlotQty(slot, qty));
+                } else if (CENT_ITEM_ID.equals(stack.getItemId())) {
+                    totalDeposited[0] += qty * 0.01;
                     toRemove.add(new SlotQty(slot, qty));
                 }
             }
         });
 
-        if (totalDeposited[0] == 0) {
-            player.sendMessage(Message.raw("No tienes items " + COIN_ITEM_ID + " en tu inventario."));
+        if (totalDeposited[0] == 0.0) {
+            player.sendMessage(Message.raw("No tienes items " + COIN_ITEM_ID + " o " + CENT_ITEM_ID + " en tu inventario."));
             return CompletableFuture.completedFuture(null);
         }
 
-        int removed = 0;
+        int itemsRemoved = 0;
         for (SlotQty s : toRemove) {
             container.removeItemStackFromSlot(s.slot, s.qty);
-            removed += s.qty;
+            itemsRemoved += s.qty;
         }
 
-        if (removed <= 0) {
-            player.sendMessage(Message.raw("No se pudieron retirar las monedas del inventario."));
+        if (itemsRemoved <= 0) {
+            player.sendMessage(Message.raw("No se pudieron retirar los items del inventario."));
             return CompletableFuture.completedFuture(null);
         }
 
-        double newBalance = user.getMoney() + removed;
+        double newBalance = user.getMoney() + totalDeposited[0];
         user.setMoney(newBalance);
         user.saveMoney();
 
         player.sendMessage(Message.raw(
-            "Has depositado " + removed + " monedas. Nuevo balance: " + String.format("%.2f", user.getMoney()) + " monedas"
+            "Has depositado " + String.format("%.2f", totalDeposited[0]) + " monedas. Nuevo balance: " + String.format("%.2f", user.getMoney()) + " monedas"
         ));
 
         return CompletableFuture.completedFuture(null);
