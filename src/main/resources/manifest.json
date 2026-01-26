@@ -1,18 +1,14 @@
 {
   "Group": "terratale",
   "Name": "Terratale",
-  "Version": "1.0.0",
+  "Version": "2.0.0",
   "Description": "Sistema de economía y bancos para Hytale",
   "Main": "terratale.plugin.TerratalePlugin",
   "ServerVersion": "*",
-  "Dependencies": {
-    "com.cassaforte:Cassaforte": "*"
-  },
+  "Dependencies": {},
   "OptionalDependencies": {
   },
-  "LoadBefore": {
-    "com.hytale.towny:HytaleTowny": "*"
-  },
+  "LoadBefore": {},
   "DisabledByDefault": false,
   "IncludesAssetPack": true
 }

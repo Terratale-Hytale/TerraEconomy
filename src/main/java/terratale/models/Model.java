@@ -197,4 +197,34 @@ public abstract class Model {
     protected static Connection getConnection() {
         return connection;
     }
+
+    public static String getDatabaseTranslation (String key) {
+        if (isMySQL) {
+            switch (key) {
+                case "AUTOINCREMENT":
+                    return "AUTO_INCREMENT";
+                case "TEXT_TYPE":
+                    return "TEXT";
+                case "DATETIME_TYPE":
+                    return "DATETIME";
+                case "utf8mb4_general_ci":
+                    return "utf8mb4_general_ci";
+                default:
+                    return key;
+            }
+        } else {
+            switch (key) {
+                case "AUTOINCREMENT":
+                    return "AUTOINCREMENT";
+                case "TEXT_TYPE":
+                    return "TEXT";
+                case "DATETIME_TYPE":
+                    return "TEXT"; // SQLite stores datetime as TEXT
+                case "utf8mb4_general_ci":
+                    return "NOCASE";
+                default:
+                    return key;
+            }
+        }
+    }
 }

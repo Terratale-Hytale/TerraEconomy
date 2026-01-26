@@ -7,6 +7,7 @@ import java.util.UUID;
 
 import com.hypixel.hytale.server.core.modules.accesscontrol.ban.Ban;
 
+import terratale.Helpers.TransactionTypes;
 import terratale.plugin.TerratalePlugin;
 
 public class User extends Model {
@@ -48,7 +49,7 @@ public class User extends Model {
 
                 Transaction transaction = new Transaction(
                     govAccount.getId(),
-                    "withdrawal",
+                    TransactionTypes.GOVERNMENT_DISTRIBUTION,
                     initialMoney,
                     user.getUuid().toString()
                 );
@@ -104,7 +105,7 @@ public class User extends Model {
             return null;
         }
         
-        String sql = "SELECT * FROM users WHERE username = ? COLLATE NOCASE";
+        String sql = "SELECT * FROM users WHERE username = ? COLLATE " + Model.getDatabaseTranslation("utf8mb4_general_ci");
         
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setString(1, username);

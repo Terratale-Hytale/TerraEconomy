@@ -48,8 +48,6 @@ public class TerratalePlugin extends JavaPlugin {
         getCommandRegistry().registerCommand(new AccountCommand());
         getCommandRegistry().registerCommand(new TerrataleCommand());
 
-        setupCassaforteIntegration();
-
         getLogger().at(Level.INFO).log("Plugin setup complete!");
     }
 
@@ -59,33 +57,6 @@ public class TerratalePlugin extends JavaPlugin {
 
     public ConfigManager getConfigManager() {
         return configManager;
-    }
-
-    private void setupCassaforteIntegration() {
-        getLogger().at(Level.INFO).log("[Cassaforte] Iniciando integración con Cassaforte...");
-
-        try {
-            Class.forName("it.cassaforte.api.Cassaforte");
-            getLogger().at(Level.INFO).log("[Cassaforte] Cassaforte detectado!");
-
-            economyService = new TerrataleEconomyService(getLogger());
-
-            // aquí ya tienes init disponible
-            cassaforteEconomy = new TerrataleCassaforteEconomy(economyService);
-
-            boolean registered = it.cassaforte.api.Cassaforte.registerEconomy(cassaforteEconomy);
-
-            if (registered) {
-                getLogger().at(Level.INFO).log("[Cassaforte] ✓ Economía registrada exitosamente!");
-            } else {
-                getLogger().at(Level.WARNING).log("[Cassaforte] ✗ No se pudo registrar: Otra economía ya está registrada");
-            }
-        } catch (ClassNotFoundException e) {
-            getLogger().at(Level.INFO).log("[Cassaforte] Cassaforte no encontrado, integración deshabilitada");
-        } catch (Throwable t) {
-            getLogger().at(Level.WARNING).log("[Cassaforte] Error al configurar integración: " + t.getMessage());
-            t.printStackTrace();
-        }
     }
 
     @Override

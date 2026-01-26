@@ -1,5 +1,6 @@
 package terratale.commands;
 
+import terratale.Helpers.TransactionTypes;
 import terratale.models.Bank;
 import terratale.models.BankAccount;
 import terratale.models.BankAccountOwner;
@@ -87,7 +88,7 @@ class BankCreateSubCommand extends AbstractAsyncCommand {
             govAccount.setBalance(govAccount.getBalance() + bankCost);
             govAccount.save();
 
-            BankTransaction govTransaction = new BankTransaction(govAccount.getBankId(), "deposit", bankCost, playerUUID.toString());
+            BankTransaction govTransaction = new BankTransaction(govAccount.getBankId(), TransactionTypes.BANK_CREATION_FEE, bankCost, playerUUID.toString());
             govTransaction.save();
         }
 
@@ -394,7 +395,7 @@ class BankDepositSubCommand extends AbstractAsyncCommand {
         bank.save();
 
         // Record transaction
-        BankTransaction transaction = new BankTransaction(bankId, "deposit", actualDeposit, playerUUID.toString());
+        BankTransaction transaction = new BankTransaction(bankId, TransactionTypes.DEPOSIT, actualDeposit, playerUUID.toString());
         transaction.save();
 
         context.sender().sendMessage(Message.raw("Depósito realizado exitosamente!"));
@@ -474,7 +475,7 @@ class BankWithdrawSubCommand extends AbstractAsyncCommand {
         user.saveMoney();
 
         // Record transaction
-        BankTransaction transaction = new BankTransaction(bankId, "withdraw", actualWithdraw, playerUUID.toString());
+        BankTransaction transaction = new BankTransaction(bankId, TransactionTypes.WITHDRAWAL, actualWithdraw, playerUUID.toString());
         transaction.save();
 
         context.sender().sendMessage(Message.raw("Retiro realizado exitosamente!"));
@@ -526,7 +527,7 @@ class BankInviteSubCommand extends AbstractAsyncCommand {
 
         BankInvitation invitation = new BankInvitation(bankId, playerUUID);
         invitation.save();
-        
+
         context.sender().sendMessage(Message.raw("Invitación enviada a " + targetPlayerName + " para unirse al banco #" + bankId));
 
         return CompletableFuture.completedFuture(null);
@@ -603,7 +604,7 @@ class BankDeleteSubCommand extends AbstractAsyncCommand {
             // Registrar transacción en la cuenta del gobierno
             BankTransaction govTransaction = new BankTransaction(
                 govAccount.getBankId(), 
-                "bank_deletion", 
+                TransactionTypes.BANK_DELETION, 
                 totalTransferred, 
                 playerUUID.toString()
             );

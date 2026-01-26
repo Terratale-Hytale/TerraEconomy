@@ -78,8 +78,9 @@ public class BankAccountOwner extends Model {
         }
         
         String sql = """
-            INSERT OR REPLACE INTO bank_accounts_owners (account_id, owner_uuid, permission) 
+            INSERT INTO bank_accounts_owners (account_id, owner_uuid, permission) 
             VALUES (?, ?, ?)
+            ON DUPLICATE KEY UPDATE permission = VALUES(permission)
         """;
         
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {

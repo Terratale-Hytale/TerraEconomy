@@ -1,5 +1,6 @@
 package terratale.commands;
 
+import terratale.Helpers.TransactionTypes;
 import terratale.models.AccountInvitation;
 import terratale.models.Bank;
 import terratale.models.BankAccount;
@@ -9,7 +10,6 @@ import terratale.models.Transaction;
 import terratale.models.BankTransaction;
 import terratale.models.User;
 import terratale.pages.AccountsPage;
-
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.protocol.packets.interface_.CustomPageLifetime;
@@ -269,7 +269,7 @@ class AccountWithdrawSubCommand extends AbstractAsyncCommand {
 
         Transaction transaction = new Transaction(
             account.getId(),
-            "withdraw",
+            TransactionTypes.WITHDRAWAL,
             totalDeducted,
             playerUUID.toString()
         );
@@ -281,7 +281,7 @@ class AccountWithdrawSubCommand extends AbstractAsyncCommand {
 
         BankTransaction bankTransaction = new BankTransaction(
             bank.getId(),
-            "withdraw",
+            TransactionTypes.WITHDRAWAL_FEE,
             totalDeducted,
             playerUUID.toString()
         );
@@ -395,7 +395,7 @@ class AccountDepositSubCommand extends AbstractAsyncCommand {
 
         Transaction transaction = new Transaction(
             account.getId(),
-            "deposit",
+            TransactionTypes.DEPOSIT,
             netDeposit + feeAmount,
             playerUUID.toString()
         );
@@ -407,7 +407,7 @@ class AccountDepositSubCommand extends AbstractAsyncCommand {
 
         BankTransaction bankTransaction = new BankTransaction(
             bank.getId(),
-            "deposit",
+            TransactionTypes.DEPOSIT_FEE,
             netDeposit + feeAmount,
             playerUUID.toString()
         );
@@ -526,7 +526,7 @@ class AccountTransferSubCommand extends AbstractAsyncCommand {
         // Registrar transacciones
         Transaction withdrawTransaction = new Transaction(
             fromAccount.getId(),
-            "transfer_out",
+            TransactionTypes.TRANSFER_WITHDRAWAL,
             totalDeducted,
             playerUUID.toString()
         );
@@ -534,7 +534,7 @@ class AccountTransferSubCommand extends AbstractAsyncCommand {
 
         Transaction depositTransaction = new Transaction(
             toAccount.getId(),
-            "transfer_in",
+            TransactionTypes.TRANSFER_DEPOSIT,
             amount,
             playerUUID.toString()
         );
@@ -546,7 +546,7 @@ class AccountTransferSubCommand extends AbstractAsyncCommand {
 
         BankTransaction bankTransaction = new BankTransaction(
             fromBank.getId(),
-            "transfer_fee",
+            TransactionTypes.TRANSFER_FEE,
             feeAmount,
             playerUUID.toString()
         );

@@ -7,6 +7,3 @@ CREATE TABLE IF NOT EXISTS bank_accounts_owners (
     FOREIGN KEY(owner_uuid) REFERENCES users(uuid),
     PRIMARY KEY(account_id, owner_uuid)
 );
-
--- Add permission column if it doesn't exist
-ALTER TABLE bank_accounts_owners ADD COLUMN IF NOT EXISTS permission VARCHAR(20) DEFAULT 'owner';

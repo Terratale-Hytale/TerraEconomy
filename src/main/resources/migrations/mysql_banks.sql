@@ -10,6 +10,3 @@ CREATE TABLE IF NOT EXISTS banks (
     visibility VARCHAR(10) DEFAULT 'public' NOT NULL,
     FOREIGN KEY(owner_uuid) REFERENCES users(uuid)
 );
-
--- Add visibility column if it doesn't exist
-ALTER TABLE banks ADD COLUMN IF NOT EXISTS visibility VARCHAR(10) DEFAULT 'public';
