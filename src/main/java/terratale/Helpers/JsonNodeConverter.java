@@ -1,23 +1,31 @@
-@Converter
-public class JsonNodeConverter implements AttributeConverter<JsonNode, String> {
+package terratale.Helpers;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+public class JsonNodeConverter {
 
     private static final ObjectMapper mapper = new ObjectMapper();
 
-    @Override
-    public String convertToDatabaseColumn(JsonNode attribute) {
+    /**
+     * Convierte un JsonNode a String para almacenar en la base de datos
+     */
+    public static String toString(JsonNode jsonNode) {
         try {
-            return attribute == null ? null : mapper.writeValueAsString(attribute);
+            return jsonNode == null ? null : mapper.writeValueAsString(jsonNode);
         } catch (Exception e) {
             throw new IllegalArgumentException("Error serializando JSON", e);
         }
     }
 
-    @Override
-    public JsonNode convertToEntityAttribute(String dbData) {
+    /**
+     * Convierte un String de la base de datos a JsonNode
+     */
+    public static JsonNode fromString(String jsonString) {
         try {
-            return dbData == null ? null : mapper.readTree(dbData);
+            return jsonString == null || jsonString.isEmpty() ? null : mapper.readTree(jsonString);
         } catch (Exception e) {
-            throw new IllegalArgumentException("Error parseando JSON", e);
+            throw new IllegalArgumentException("Error parseando JSON: " + jsonString, e);
         }
     }
 }
