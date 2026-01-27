@@ -94,11 +94,13 @@ public abstract class Model {
             "users",
             "banks", 
             "bank_accounts",
+            "add_key_to_bank_accounts",
             "bank_accounts_owners",
             "transactions",
             "bank_transactions",
             "account_invitations",
-            "bank_invitations"
+            "bank_invitations",
+            "invoices"
         };
         
         for (String migration : migrations) {

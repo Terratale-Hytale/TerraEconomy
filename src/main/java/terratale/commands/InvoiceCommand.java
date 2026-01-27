@@ -195,6 +195,7 @@ class InvoicePaySubCommand extends AbstractAsyncCommand {
             context.sender().sendMessage(Message.raw("Comisión bancaria: $" + String.format("%.2f", bankTransferFeeAmount)));
             return CompletableFuture.completedFuture(null);
         }
+        
         // Realizar la transferencia
         payerAcc.setBalance(payerAcc.getBalance() - (invoice.getAmount() + bankTransferFeeAmount));
         receptorAcc.setBalance(receptorAcc.getBalance() + (invoice.getAmount() - gouvermentFeeAmount));
