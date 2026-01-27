@@ -1,5 +1,6 @@
 package terratale.commands;
 
+import terratale.models.Bank;
 import terratale.models.BankAccount;
 import terratale.models.BankAccountOwner;
 import terratale.models.BankTransaction;
@@ -141,7 +142,6 @@ class InvoicePaySubCommand extends AbstractAsyncCommand {
 
         int invoiceId = invoiceIdArg.get(context);
         UUID playerUUID = context.sender().getUuid();
-        User playerUser = User.findOrCreate(playerUUID, context.sender().getDisplayName());
 
         // Buscar la factura
         Invoice invoice = Invoice.find(invoiceId);
@@ -173,68 +173,82 @@ class InvoicePaySubCommand extends AbstractAsyncCommand {
             return CompletableFuture.completedFuture(null);
         }
 
-        // Verificar que haya suficiente saldo
-        if (payerAcc.getBalance() < invoice.getAmount()) {
+        // Obtener banco del pagador
+        Bank payerBank = payerAcc.getBank();
+        if (payerBank == null) {
+            context.sender().sendMessage(Message.raw("Error: El banco de la cuenta pagadora no existe."));
+            return CompletableFuture.completedFuture(null);
+        }
+
+        // Calcular comisiones e impuestos
+        int governmentFeePercent = TerratalePlugin.get().config().taxPercentage;
+        double governmentFeeAmount = (invoice.getAmount() * governmentFeePercent) / 100.0;
+
+        Double bankTransferFeePercent = payerAcc.getTransactionsFee() != null ? 
+            payerAcc.getTransactionsFee() : payerBank.getTransactionsFee();
+        double bankTransferFeeAmount = (invoice.getAmount() * bankTransferFeePercent) / 100.0;
+
+        // Total a deducir de la cuenta del pagador
+        double totalDeducted = invoice.getAmount() + bankTransferFeeAmount;
+
+        // Verificar que haya suficiente saldo en la cuenta del pagador
+        if (payerAcc.getBalance() < totalDeducted) {
             context.sender().sendMessage(Message.raw("Saldo insuficiente en la cuenta pagadora."));
             context.sender().sendMessage(Message.raw("Saldo actual: $" + String.format("%.2f", payerAcc.getBalance())));
-            context.sender().sendMessage(Message.raw("Monto requerido: $" + String.format("%.2f", invoice.getAmount())));
+            context.sender().sendMessage(Message.raw("Monto factura: $" + String.format("%.2f", invoice.getAmount())));
+            context.sender().sendMessage(Message.raw("Comisión bancaria (" + String.format("%.2f", bankTransferFeePercent) + "%): $" + String.format("%.2f", bankTransferFeeAmount)));
+            context.sender().sendMessage(Message.raw("Total requerido: $" + String.format("%.2f", totalDeducted)));
             return CompletableFuture.completedFuture(null);
         }
 
-        // Esto se le quita al receptor de la factura como impuesto
-        int gouvermentFeePercent = TerratalePlugin.get().config().taxPercentage;
-        Double gouvermentFeeAmount = (invoice.getAmount() * gouvermentFeePercent) / 100;
-
-        // Esto se le quita al pagador de la factura como comisión bancaria
-        Double bankTransferFeePercent = payerAcc.getBank().getTransactionsFee();
-        Double bankTransferFeeAmount = (invoice.getAmount() * bankTransferFeePercent) / 100;
-
-        if (playerUser.getMoney() < invoice.getAmount() + bankTransferFeeAmount + gouvermentFeeAmount) {
-            context.sender().sendMessage(Message.raw("Saldo insuficiente para cubrir las comisiones e impuestos."));
-            context.sender().sendMessage(Message.raw("Saldo actual: $" + String.format("%.2f", playerUser.getMoney())));
-            context.sender().sendMessage(Message.raw("Comisión bancaria: $" + String.format("%.2f", bankTransferFeeAmount)));
-            return CompletableFuture.completedFuture(null);
+        // Realizar la transferencia
+        payerAcc.setBalance(payerAcc.getBalance() - totalDeducted);
+        receptorAcc.setBalance(receptorAcc.getBalance() + (invoice.getAmount() - governmentFeeAmount));
+        
+        if (govAccount != null) {
+            govAccount.setBalance(govAccount.getBalance() + governmentFeeAmount);
+            govAccount.save();
         }
         
-        // Realizar la transferencia
-        payerAcc.setBalance(payerAcc.getBalance() - (invoice.getAmount() + bankTransferFeeAmount));
-        receptorAcc.setBalance(receptorAcc.getBalance() + (invoice.getAmount() - gouvermentFeeAmount));
-        govAccount.setBalance(govAccount.getBalance() + gouvermentFeeAmount);
+        // Agregar comisión al banco
+        payerBank.setBalance(payerBank.getBalance() + bankTransferFeeAmount);
         
         payerAcc.save();
         receptorAcc.save();
-        govAccount.save();
+        payerBank.save();
 
         // Registrar transacciones
         Transaction payerTransaction = new Transaction(
             payerAcc.getId(),
             TransactionTypes.INVOICE_WITHDRAWAL,
-            invoice.getAmount() + bankTransferFeeAmount,
-            context.sender().getUuid().toString()
+            totalDeducted,
+            playerUUID.toString()
         );
         payerTransaction.save();
 
         Transaction receptorTransaction = new Transaction(
             receptorAcc.getId(),
-            TransactionTypes.INVOICE_PAYMENT,
-            invoice.getAmount() - gouvermentFeeAmount,
-            context.sender().getUuid().toString()
+            TransactionTypes.INVOICE_DEPOSIT,
+            invoice.getAmount() - governmentFeeAmount,
+            playerUUID.toString()
         );
         receptorTransaction.save();
 
-        Transaction govTransaction = new Transaction(
-            govAccount.getId(),
-            TransactionTypes.GOVERNMENT_FEE,
-            gouvermentFeeAmount,
-            context.sender().getUuid().toString()
-        );
-        govTransaction.save();
+        if (govAccount != null) {
+            Transaction govTransaction = new Transaction(
+                govAccount.getId(),
+                TransactionTypes.GOVERNMENT_FEE,
+                governmentFeeAmount,
+                playerUUID.toString()
+            );
+            govTransaction.save();
+        }
 
         BankTransaction bankTransaction = new BankTransaction(
-            payerAcc.getBank().getId(),
+            payerBank.getId(),
             TransactionTypes.TRANSFER_FEE,
             bankTransferFeeAmount,
-            context.sender().getUuid().toString()
+            playerUUID.toString()
         );
         bankTransaction.save();
 
@@ -243,7 +257,9 @@ class InvoicePaySubCommand extends AbstractAsyncCommand {
 
         context.sender().sendMessage(Message.raw("Factura pagada exitosamente!"));
         context.sender().sendMessage(Message.raw("ID: #" + invoice.getId()));
-        context.sender().sendMessage(Message.raw("Monto pagado: $" + String.format("%.2f", invoice.getAmount())));
+        context.sender().sendMessage(Message.raw("Monto factura: $" + String.format("%.2f", invoice.getAmount())));
+        context.sender().sendMessage(Message.raw("Comisión bancaria: $" + String.format("%.2f", bankTransferFeeAmount)));
+        context.sender().sendMessage(Message.raw("Total deducido: $" + String.format("%.2f", totalDeducted)));
         context.sender().sendMessage(Message.raw("Nuevo saldo: $" + String.format("%.2f", payerAcc.getBalance())));
 
         return CompletableFuture.completedFuture(null);
