@@ -279,13 +279,15 @@ class AccountWithdrawSubCommand extends AbstractAsyncCommand {
         bank.setBalance(newBankBalance);
         bank.save();
 
-        BankTransaction bankTransaction = new BankTransaction(
-            bank.getId(),
-            TransactionTypes.WITHDRAWAL_FEE,
-            totalDeducted,
-            playerUUID.toString()
-        );
-        bankTransaction.save();
+        if (withdrawFee > 0) {
+            BankTransaction bankTransaction = new BankTransaction(
+                bank.getId(),
+                TransactionTypes.WITHDRAWAL_FEE,
+                totalDeducted,
+                playerUUID.toString()
+            );
+            bankTransaction.save();
+        }
 
         if (player != null) {
             player.sendMessage(Message.raw("Retiro exitoso!"));
@@ -405,13 +407,15 @@ class AccountDepositSubCommand extends AbstractAsyncCommand {
         bank.setBalance(newBankBalance);
         bank.save();
 
-        BankTransaction bankTransaction = new BankTransaction(
-            bank.getId(),
-            TransactionTypes.DEPOSIT_FEE,
-            netDeposit + feeAmount,
-            playerUUID.toString()
-        );
-        bankTransaction.save();
+        if (depositFee > 0) {
+            BankTransaction bankTransaction = new BankTransaction(
+                bank.getId(),
+                TransactionTypes.DEPOSIT_FEE,
+                feeAmount,
+                playerUUID.toString()
+            );
+            bankTransaction.save();
+        }
 
         if (player != null) {
             player.sendMessage(Message.raw("Depósito exitoso!"));
@@ -544,13 +548,15 @@ class AccountTransferSubCommand extends AbstractAsyncCommand {
         fromBank.setBalance(fromBank.getBalance() + feeAmount);
         fromBank.save();
 
-        BankTransaction bankTransaction = new BankTransaction(
-            fromBank.getId(),
-            TransactionTypes.TRANSFER_FEE,
-            feeAmount,
-            playerUUID.toString()
-        );
-        bankTransaction.save();
+        if (transferFee > 0) {
+            BankTransaction bankTransaction = new BankTransaction(
+                fromBank.getId(),
+                TransactionTypes.TRANSFER_FEE,
+                feeAmount,
+                playerUUID.toString()
+            );
+            bankTransaction.save();
+        }
 
         player.sendMessage(Message.raw("Transferencia exitosa!"));
         player.sendMessage(Message.raw("De: " + fromAccountNumber + " (" + fromBank.getName() + ")"));
