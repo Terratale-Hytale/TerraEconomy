@@ -5,6 +5,8 @@ import terratale.Helpers.PluginConfig;
 import terratale.commands.AccountCommand;
 import terratale.commands.BankCommand;
 import terratale.commands.BanksCommand;
+import terratale.commands.InvoiceCommand;
+import terratale.commands.InvoicesCommand;
 import terratale.commands.MoneyCommand;
 import terratale.commands.TerrataleCommand;
 import terratale.models.Model;
@@ -46,6 +48,8 @@ public class TerratalePlugin extends JavaPlugin {
         getCommandRegistry().registerCommand(new BankCommand());
         getCommandRegistry().registerCommand(new BanksCommand());
         getCommandRegistry().registerCommand(new AccountCommand());
+        getCommandRegistry().registerCommand(new InvoiceCommand());
+        getCommandRegistry().registerCommand(new InvoicesCommand());
         getCommandRegistry().registerCommand(new TerrataleCommand());
 
         getLogger().at(Level.INFO).log("Plugin setup complete!");
