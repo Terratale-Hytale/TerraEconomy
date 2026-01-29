@@ -1,0 +1,63 @@
+$C = "../Common.ui";
+
+Group #InvoiceComponent {
+    LayoutMode: Top;
+    Anchor: (Width: 750, Height: 90);
+
+    Group #FirstRow {
+        LayoutMode: Left;
+        Anchor: (Width: 750, Height: 30);
+
+        Label #InvoiceID {
+            Style: (TextColor: #ffffff);
+            Text: "ID";
+            Anchor: (Width: 80, Height: 30);
+        }
+
+        Label #Status {
+            Style: (TextColor: #ffff00);
+            Text: "Estado";
+            Anchor: (Width: 150, Height: 30);
+        }
+
+        Label #Amount {
+            Style: (TextColor: #00ff00);
+            Text: "Monto";
+            Anchor: (Width: 120, Height: 30);
+        }
+
+        Label #DueDate {
+            Style: (TextColor: #aaaaaa);
+            Text: "Vencimiento";
+            Anchor: (Width: 140, Height: 30);
+        }
+    }
+
+    Group #SecondRow {
+        LayoutMode: Left;
+        Anchor: (Width: 750, Height: 30);
+
+        Label #From {
+            Style: (TextColor: #cccccc);
+            Text: "De";
+            Anchor: (Width: 200, Height: 30);
+        }
+
+        Label #To {
+            Style: (TextColor: #cccccc);
+            Text: "A";
+            Anchor: (Width: 200, Height: 30);
+        }
+    }
+
+    Group #ThirdRow {
+        LayoutMode: Left;
+        Anchor: (Width: 750, Height: 30);
+
+        Label #Description {
+            Style: (TextColor: #999999);
+            Text: "Descripción";
+            Anchor: (Width: 750, Height: 30);
+        }
+    }
+}
