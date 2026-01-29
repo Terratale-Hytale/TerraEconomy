@@ -101,6 +101,11 @@ class InvoiceCreateSubCommand extends AbstractAsyncCommand {
             return CompletableFuture.completedFuture(null);
         }
 
+        if (receptorAccount.equals(payerAccount)) {
+            context.sender().sendMessage(Message.raw("La cuenta receptora y la cuenta pagadora no pueden ser la misma."));
+            return CompletableFuture.completedFuture(null);
+        }
+
         // Calcular fecha de vencimiento
         long currentTimeMillis = System.currentTimeMillis();
         long dueTimeMillis = currentTimeMillis + (daysUntilDue * 24L * 60L * 60L * 1000L);
