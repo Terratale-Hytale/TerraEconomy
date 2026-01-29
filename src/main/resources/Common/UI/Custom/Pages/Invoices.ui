@@ -15,6 +15,34 @@ $C.@PageOverlay {
         }
       }
       #Content {
+        Group #SearchSection {
+          LayoutMode: Left;
+          Anchor: (Width: 750, Height: 50);
+          
+          Label #SearchLabel {
+            Style: (TextColor: #ffffff);
+            Text: "Buscar por ID:";
+            Anchor: (Width: 150, Height: 30);
+          }
+
+          $C.@TextField #SearchInput {
+            Style: $C.@DefaultInputFieldStyle;
+            Background: $C.@InputBoxBackground;
+            Anchor: (Width: 200, Height: 30);
+            @Binding = "ACTION";
+          }
+
+          $C.@TextButton #SearchButton {
+            @Text = "Buscar";
+            Anchor: (Width: 100, Height: 30);
+          }
+
+          $C.@TextButton #ClearButton {
+            @Text = "Limpiar";
+            Anchor: (Width: 100, Height: 30);
+          }
+        }
+
         Group #ContentList {
           ScrollbarStyle: $C.@DefaultScrollbarStyle;
           LayoutMode: TopScrolling;

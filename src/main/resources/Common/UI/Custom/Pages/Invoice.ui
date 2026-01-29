@@ -2,7 +2,7 @@ $C = "../Common.ui";
 
 Group #InvoiceComponent {
     LayoutMode: Top;
-    Anchor: (Width: 750, Height: 90);
+    Anchor: (Width: 750, Height: 105);
 
     Group #FirstRow {
         LayoutMode: Left;
@@ -58,6 +58,16 @@ Group #InvoiceComponent {
             Style: (TextColor: #999999);
             Text: "Descripción";
             Anchor: (Width: 750, Height: 30);
+        }
+    }
+
+    Group #Divider {
+        LayoutMode: Left;
+        Anchor: (Width: 750, Height: 10);
+
+        $C.@Image #DividerLine {
+            Background: (Color: #444444);
+            Anchor: (Width: 750, Height: 2);
         }
     }
 }
