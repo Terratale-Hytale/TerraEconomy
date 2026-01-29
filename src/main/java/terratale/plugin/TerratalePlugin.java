@@ -8,6 +8,7 @@ import terratale.commands.BanksCommand;
 import terratale.commands.InvoiceCommand;
 import terratale.commands.InvoicesCommand;
 import terratale.commands.MoneyCommand;
+import terratale.commands.SchedulePaymentCommand;
 import terratale.commands.TerrataleCommand;
 import terratale.models.Model;
 import terratale.plugin.integrations.cassaforte.TerrataleEconomyService;
@@ -50,6 +51,7 @@ public class TerratalePlugin extends JavaPlugin {
         getCommandRegistry().registerCommand(new AccountCommand());
         getCommandRegistry().registerCommand(new InvoiceCommand());
         getCommandRegistry().registerCommand(new InvoicesCommand());
+        getCommandRegistry().registerCommand(new SchedulePaymentCommand());
         getCommandRegistry().registerCommand(new TerrataleCommand());
 
         getLogger().at(Level.INFO).log("Plugin setup complete!");

@@ -7,6 +7,7 @@ import java.util.UUID;
 
 import com.hypixel.hytale.server.core.modules.accesscontrol.ban.Ban;
 
+import terratale.Helpers.PorcentualHelper;
 import terratale.Helpers.TransactionTypes;
 import terratale.plugin.TerratalePlugin;
 
@@ -20,7 +21,7 @@ public class User extends Model {
     public User(UUID uuid, String username) {
         this.uuid = uuid;
         this.username = username;
-        this.money = TerratalePlugin.get().config().initialMoney;
+        this.money = PorcentualHelper.calculatePorcentual(TerratalePlugin.get().config().initialMoney);
         this.lastLogin = System.currentTimeMillis();
     }
     
@@ -44,7 +45,7 @@ public class User extends Model {
 
             if (govAccount != null) {
                 // Dar dinero inicial desde la cuenta del gobierno
-                double initialMoney = TerratalePlugin.get().config().initialMoney;
+                double initialMoney = PorcentualHelper.calculatePorcentual(TerratalePlugin.get().config().initialMoney);
                 govAccount.setBalance(govAccount.getBalance() - initialMoney);
 
                 Transaction transaction = new Transaction(
@@ -221,6 +222,28 @@ public class User extends Model {
         }
         
         return accounts;
+    }
+
+    public static Double getAllMoney () {
+        if (connection == null) {
+            logError("Cannot get all money: connection is null");
+            return 0.0;
+        }
+
+        String sql = "SELECT SUM(money) as total_money FROM users";
+
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            ResultSet rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                return rs.getDouble("total_money");
+            }
+        } catch (SQLException e) {
+            logError("Failed to get all money: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return 0.0;
     }
     
     // Obtener bancos del usuario

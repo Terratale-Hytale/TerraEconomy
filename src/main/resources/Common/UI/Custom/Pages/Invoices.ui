@@ -1,0 +1,24 @@
+$C = "../Common.ui";
+
+$C.@PageOverlay {
+
+  $C.@Container #InvoicesContainer {
+    Anchor: (Width: 800, Height: 500);
+    ScrollbarStyle: $C.@DefaultScrollbarStyle;
+      #Title {
+        Group #ContainerHeader {
+          LayoutMode: Left;
+
+          $C.@Title #HeaderTitle {
+            @Text = "Facturas (Pendientes primero)";
+          }
+        }
+      }
+      #Content {
+        Group #ContentList {
+          ScrollbarStyle: $C.@DefaultScrollbarStyle;
+          LayoutMode: TopScrolling;
+        }
+      }
+  }
+}

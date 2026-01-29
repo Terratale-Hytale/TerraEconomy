@@ -1,5 +1,6 @@
 package terratale.commands;
 
+import terratale.Helpers.PorcentualHelper;
 import terratale.Helpers.TransactionTypes;
 import terratale.models.Bank;
 import terratale.models.BankAccount;
@@ -72,7 +73,7 @@ class BankCreateSubCommand extends AbstractAsyncCommand {
         String playerName = context.sender().getDisplayName();
 
         User user = User.findOrCreate(playerUUID, playerName);
-        Double bankCost = TerratalePlugin.get().config().bankCreationCost;
+        Double bankCost = PorcentualHelper.calculatePorcentual(TerratalePlugin.get().config().bankCreationCost);
 
         if (user.getMoney() < bankCost) {
             context.sender().sendMessage(Message.raw("No tienes suficientes monedas para crear un banco. Costo: " + bankCost + " monedas."));
