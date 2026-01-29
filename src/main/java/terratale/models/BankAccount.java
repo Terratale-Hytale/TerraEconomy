@@ -217,6 +217,28 @@ public class BankAccount extends Model {
         }
     }
 
+    public static double getAllAccountsMoney() {
+        double total = 0.0;
+        if (connection == null) {
+            logError("Cannot calculate total money: connection is null");
+            return total;
+        }
+        
+        String sql = "SELECT SUM(balance) AS total_balance FROM bank_accounts";
+        
+        try (Statement stmt = connection.createStatement()) {
+            ResultSet rs = stmt.executeQuery(sql);
+            if (rs.next()) {
+                total = rs.getDouble("total_balance");
+            }
+        } catch (SQLException e) {
+            logError("Failed to calculate total money: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
+        return total;
+    }
+
     private String generateAccountNumber(int bankId) {
         // Simple account number generation logic
         Bank bank = Bank.find(bankId);
