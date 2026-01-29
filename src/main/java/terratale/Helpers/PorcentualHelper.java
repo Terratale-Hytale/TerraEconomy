@@ -10,6 +10,6 @@ public abstract class PorcentualHelper {
         total = total + User.getAllMoney();
         total = total + BankAccount.getAllAccountsMoney();
 
-        return (porcentualPoints / 100) * total;
+        return porcentualPoints * total;
     } 
 }
