@@ -29,7 +29,6 @@ $C.@PageOverlay {
             Style: $C.@DefaultInputFieldStyle;
             Background: $C.@InputBoxBackground;
             Anchor: (Width: 200, Height: 30);
-            @Binding = "ACTION";
           }
 
           $C.@TextButton #SearchButton {
