@@ -111,10 +111,10 @@ class SchedulePaymentCreateSubCommand extends AbstractAsyncCommand {
         );
         schedulePayment.save();
 
-        context.sender().sendMessage(Message.raw("§aPago programado creado exitosamente!"));
-        context.sender().sendMessage(Message.raw("§7- Día de cobro: " + dayOfMonth + " de cada mes"));
-        context.sender().sendMessage(Message.raw("§7- Días para pagar: " + daysUntilDue + " días"));
-        context.sender().sendMessage(Message.raw("§7- Monto: $" + amount));
+        context.sender().sendMessage(Message.raw("Pago programado creado exitosamente!"));
+        context.sender().sendMessage(Message.raw("- Día de cobro: " + dayOfMonth + " de cada mes"));
+        context.sender().sendMessage(Message.raw("- Días para pagar: " + daysUntilDue + " días"));
+        context.sender().sendMessage(Message.raw("- Monto: $" + amount));
 
         return CompletableFuture.completedFuture(null);
     }
@@ -145,7 +145,7 @@ class SchedulePaymentListSubCommand extends AbstractAsyncCommand {
             // Buscar por cuenta
             BankAccount bankAccount = BankAccount.findByAccountNumber(account);
             if (bankAccount == null) {
-                context.sender().sendMessage(Message.raw("§cLa cuenta no existe."));
+                context.sender().sendMessage(Message.raw("La cuenta no existe."));
                 return CompletableFuture.completedFuture(null);
             }
 
@@ -190,7 +190,7 @@ class SchedulePaymentListSubCommand extends AbstractAsyncCommand {
             } else {
                 for (SchedulePayment sp : schedulePayments) {
                     context.sender().sendMessage(Message.raw(
-                        "§7- ID: " + sp.getId() + 
+                        "- ID: " + sp.getId() + 
                         " | Día: " + sp.getDayOfMonth() + 
                         " | De: " + sp.getPayerAccountNumber() +
                         " → " + sp.getReceptorAccountNumber() +

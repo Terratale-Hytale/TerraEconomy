@@ -7,11 +7,11 @@ import com.hypixel.hytale.server.core.command.system.arguments.types.ArgTypes;
 import com.hypixel.hytale.server.core.command.system.basecommands.AbstractAsyncCommand;
 import com.hypixel.hytale.server.core.command.system.basecommands.AbstractCommandCollection;
 import com.hypixel.hytale.server.core.entity.entities.Player;
-import com.hypixel.hytale.server.core.inventory.Inventory;
-import com.hypixel.hytale.server.core.inventory.ItemStack;
-import com.hypixel.hytale.server.core.inventory.container.ItemContainer;
-import java.util.List;
-import java.util.ArrayList;
+// import com.hypixel.hytale.server.core.inventory.Inventory;
+// import com.hypixel.hytale.server.core.inventory.ItemStack;
+// import com.hypixel.hytale.server.core.inventory.container.ItemContainer;
+// import java.util.List;
+// import java.util.ArrayList;
 
 import terratale.models.User;
 
@@ -26,8 +26,8 @@ public class MoneyCommand extends AbstractCommandCollection {
 
         addSubCommand(new MoneyBalanceSubCommand());
         addSubCommand(new MoneySetSubCommand());
-        addSubCommand(new MoneyWithdrawSubCommand());
-        addSubCommand(new MoneyDepositSubCommand());
+        // addSubCommand(new MoneyWithdrawSubCommand());
+        // addSubCommand(new MoneyDepositSubCommand());
     }
 }
 
@@ -99,154 +99,154 @@ class MoneySetSubCommand extends AbstractAsyncCommand {
 }
 
 // /money withdraw <amount>
-class MoneyWithdrawSubCommand extends AbstractAsyncCommand {
+// class MoneyWithdrawSubCommand extends AbstractAsyncCommand {
 
-    private final RequiredArg<Double> amountArg;
+//     private final RequiredArg<Double> amountArg;
 
-    // Ajusta esto al ID REAL de tu item. Ejemplos comunes:
-    // "Terratale_Coin"  (como tú lo llamas)
-    // "terratale:coin"  (si usas namespace)
-    private static final String COIN_ITEM_ID = "Terratale_Coin";
-    private static final String CENT_ITEM_ID = "Terratale_Cent";
+//     // Ajusta esto al ID REAL de tu item. Ejemplos comunes:
+//     // "Terratale_Coin"  (como tú lo llamas)
+//     // "terratale:coin"  (si usas namespace)
+//     private static final String COIN_ITEM_ID = "Terratale_Coin";
+//     private static final String CENT_ITEM_ID = "Terratale_Cent";
 
-    public MoneyWithdrawSubCommand() {
-        super("withdraw", "Withdraw money as Terratale_Coin items");
-        amountArg = withRequiredArg("amount", "Amount to withdraw", ArgTypes.DOUBLE);
-    }
+//     public MoneyWithdrawSubCommand() {
+//         super("withdraw", "Withdraw money as Terratale_Coin items");
+//         amountArg = withRequiredArg("amount", "Amount to withdraw", ArgTypes.DOUBLE);
+//     }
 
-    @Override
-    @Nonnull
-    protected CompletableFuture<Void> executeAsync(@Nonnull CommandContext context) {
-        if (!(context.sender() instanceof Player)) {
-            context.sender().sendMessage(Message.raw("Este comando solo puede usarse en juego."));
-            return CompletableFuture.completedFuture(null);
-        }
+//     @Override
+//     @Nonnull
+//     protected CompletableFuture<Void> executeAsync(@Nonnull CommandContext context) {
+//         if (!(context.sender() instanceof Player)) {
+//             context.sender().sendMessage(Message.raw("Este comando solo puede usarse en juego."));
+//             return CompletableFuture.completedFuture(null);
+//         }
 
-        Player player = (Player) context.sender();
-        UUID playerUUID = context.sender().getUuid();
-        String playerName = player.getDisplayName();
-        Double totalAmount = amountArg.get(context);
-        int amount = (int) Math.floor(totalAmount);
-        Double cents = totalAmount % 1.0;
-        player.sendMessage(Message.raw("Intentando retirar: " + totalAmount + " monedas (" + amount + " " + COIN_ITEM_ID + " y " + String.format("%.0f", cents * 100) + " " + CENT_ITEM_ID + ")"));
+//         Player player = (Player) context.sender();
+//         UUID playerUUID = context.sender().getUuid();
+//         String playerName = player.getDisplayName();
+//         Double totalAmount = amountArg.get(context);
+//         int amount = (int) Math.floor(totalAmount);
+//         Double cents = totalAmount % 1.0;
+//         player.sendMessage(Message.raw("Intentando retirar: " + totalAmount + " monedas (" + amount + " " + COIN_ITEM_ID + " y " + String.format("%.0f", cents * 100) + " " + CENT_ITEM_ID + ")"));
 
-        if (totalAmount <= 0) {
-            player.sendMessage(Message.raw("La cantidad debe ser un número positivo."));
-            return CompletableFuture.completedFuture(null);
-        }
+//         if (totalAmount <= 0) {
+//             player.sendMessage(Message.raw("La cantidad debe ser un número positivo."));
+//             return CompletableFuture.completedFuture(null);
+//         }
 
-        User user = User.findOrCreate(playerUUID, playerName);
-        double balance = user.getMoney();
+//         User user = User.findOrCreate(playerUUID, playerName);
+//         double balance = user.getMoney();
 
-        if (balance < totalAmount) {
-            player.sendMessage(Message.raw("No tienes suficiente dinero. Tu balance es: " + String.format("%.2f", balance) + " monedas"));
-            return CompletableFuture.completedFuture(null);
-        }
+//         if (balance < totalAmount) {
+//             player.sendMessage(Message.raw("No tienes suficiente dinero. Tu balance es: " + String.format("%.2f", balance) + " monedas"));
+//             return CompletableFuture.completedFuture(null);
+//         }
 
-        // Restar el dinero
-        user.setMoney(balance - totalAmount);
-        user.saveMoney();
+//         // Restar el dinero
+//         user.setMoney(balance - totalAmount);
+//         user.saveMoney();
 
-        // Dar items al inventario (API actual: ItemStack por ID + cantidad)
-        Inventory inventory = player.getInventory();
+//         // Dar items al inventario (API actual: ItemStack por ID + cantidad)
+//         Inventory inventory = player.getInventory();
 
-        try {
-            ItemStack coinStack = new ItemStack(COIN_ITEM_ID, amount);
-            ItemContainer invContainer = inventory.getStorage();
+//         try {
+//             ItemStack coinStack = new ItemStack(COIN_ITEM_ID, amount);
+//             ItemContainer invContainer = inventory.getStorage();
 
-            if (cents > 0) {
-                ItemStack centStack = new ItemStack(CENT_ITEM_ID, (int) Math.round(cents * 100));
-                invContainer.addItemStack(centStack);
-            }
-            invContainer.addItemStack(coinStack);
+//             if (cents > 0) {
+//                 ItemStack centStack = new ItemStack(CENT_ITEM_ID, (int) Math.round(cents * 100));
+//                 invContainer.addItemStack(centStack);
+//             }
+//             invContainer.addItemStack(coinStack);
 
-            player.sendMessage(Message.raw("Has retirado " + totalAmount + "."));
-        } catch (Exception e) {
-            user.setMoney(balance);
-            user.saveMoney();
+//             player.sendMessage(Message.raw("Has retirado " + totalAmount + "."));
+//         } catch (Exception e) {
+//             user.setMoney(balance);
+//             user.saveMoney();
 
-            player.sendMessage(Message.raw("Error: no se pudo crear el item '" + COIN_ITEM_ID + "'. Se ha revertido el retiro."));
-        }
+//             player.sendMessage(Message.raw("Error: no se pudo crear el item '" + COIN_ITEM_ID + "'. Se ha revertido el retiro."));
+//         }
 
-        return CompletableFuture.completedFuture(null);
-    }
-}
+//         return CompletableFuture.completedFuture(null);
+//     }
+// }
 
-class MoneyDepositSubCommand extends AbstractAsyncCommand {
+// class MoneyDepositSubCommand extends AbstractAsyncCommand {
 
-    private static final String COIN_ITEM_ID = "Terratale_Coin";
-    private static final String CENT_ITEM_ID = "Terratale_Cent";
+//     private static final String COIN_ITEM_ID = "Terratale_Coin";
+//     private static final String CENT_ITEM_ID = "Terratale_Cent";
 
-    public MoneyDepositSubCommand() {
-        super("deposit", "Deposit all Terratale_Coin items from inventory to money");
-    }
+//     public MoneyDepositSubCommand() {
+//         super("deposit", "Deposit all Terratale_Coin items from inventory to money");
+//     }
 
-    @Override
-    @Nonnull
-    protected CompletableFuture<Void> executeAsync(@Nonnull CommandContext context) {
-        if (!(context.sender() instanceof Player)) {
-            context.sender().sendMessage(Message.raw("Este comando solo puede usarse en juego."));
-            return CompletableFuture.completedFuture(null);
-        }
+//     @Override
+//     @Nonnull
+//     protected CompletableFuture<Void> executeAsync(@Nonnull CommandContext context) {
+//         if (!(context.sender() instanceof Player)) {
+//             context.sender().sendMessage(Message.raw("Este comando solo puede usarse en juego."));
+//             return CompletableFuture.completedFuture(null);
+//         }
 
-        Player player = (Player) context.sender();
-        UUID playerUUID = context.sender().getUuid();
-        String playerName = player.getDisplayName();
+//         Player player = (Player) context.sender();
+//         UUID playerUUID = context.sender().getUuid();
+//         String playerName = player.getDisplayName();
 
-        User user = User.findOrCreate(playerUUID, playerName);
+//         User user = User.findOrCreate(playerUUID, playerName);
 
-        Inventory inventory = player.getInventory();
+//         Inventory inventory = player.getInventory();
 
-        ItemContainer container = inventory.getCombinedEverything();
+//         ItemContainer container = inventory.getCombinedEverything();
 
-        class SlotQty {
-            final short slot;
-            final int qty;
-            SlotQty(short slot, int qty) { this.slot = slot; this.qty = qty; }
-        }
+//         class SlotQty {
+//             final short slot;
+//             final int qty;
+//             SlotQty(short slot, int qty) { this.slot = slot; this.qty = qty; }
+//         }
 
-        List<SlotQty> toRemove = new ArrayList<>();
-        final double[] totalDeposited = {0.0};
+//         List<SlotQty> toRemove = new ArrayList<>();
+//         final double[] totalDeposited = {0.0};
 
-        container.forEach((slot, stack) -> {
-            if (stack == null || stack.isEmpty()) return;
+//         container.forEach((slot, stack) -> {
+//             if (stack == null || stack.isEmpty()) return;
 
-            int qty = stack.getQuantity();
-            if (qty > 0) {
-                if (COIN_ITEM_ID.equals(stack.getItemId())) { 
-                    totalDeposited[0] += qty;
-                    toRemove.add(new SlotQty(slot, qty));
-                } else if (CENT_ITEM_ID.equals(stack.getItemId())) {
-                    totalDeposited[0] += qty * 0.01;
-                    toRemove.add(new SlotQty(slot, qty));
-                }
-            }
-        });
+//             int qty = stack.getQuantity();
+//             if (qty > 0) {
+//                 if (COIN_ITEM_ID.equals(stack.getItemId())) { 
+//                     totalDeposited[0] += qty;
+//                     toRemove.add(new SlotQty(slot, qty));
+//                 } else if (CENT_ITEM_ID.equals(stack.getItemId())) {
+//                     totalDeposited[0] += qty * 0.01;
+//                     toRemove.add(new SlotQty(slot, qty));
+//                 }
+//             }
+//         });
 
-        if (totalDeposited[0] == 0.0) {
-            player.sendMessage(Message.raw("No tienes items " + COIN_ITEM_ID + " o " + CENT_ITEM_ID + " en tu inventario."));
-            return CompletableFuture.completedFuture(null);
-        }
+//         if (totalDeposited[0] == 0.0) {
+//             player.sendMessage(Message.raw("No tienes items " + COIN_ITEM_ID + " o " + CENT_ITEM_ID + " en tu inventario."));
+//             return CompletableFuture.completedFuture(null);
+//         }
 
-        int itemsRemoved = 0;
-        for (SlotQty s : toRemove) {
-            container.removeItemStackFromSlot(s.slot, s.qty);
-            itemsRemoved += s.qty;
-        }
+//         int itemsRemoved = 0;
+//         for (SlotQty s : toRemove) {
+//             container.removeItemStackFromSlot(s.slot, s.qty);
+//             itemsRemoved += s.qty;
+//         }
 
-        if (itemsRemoved <= 0) {
-            player.sendMessage(Message.raw("No se pudieron retirar los items del inventario."));
-            return CompletableFuture.completedFuture(null);
-        }
+//         if (itemsRemoved <= 0) {
+//             player.sendMessage(Message.raw("No se pudieron retirar los items del inventario."));
+//             return CompletableFuture.completedFuture(null);
+//         }
 
-        double newBalance = user.getMoney() + totalDeposited[0];
-        user.setMoney(newBalance);
-        user.saveMoney();
+//         double newBalance = user.getMoney() + totalDeposited[0];
+//         user.setMoney(newBalance);
+//         user.saveMoney();
 
-        player.sendMessage(Message.raw(
-            "Has depositado " + String.format("%.2f", totalDeposited[0]) + " monedas. Nuevo balance: " + String.format("%.2f", user.getMoney()) + " monedas"
-        ));
+//         player.sendMessage(Message.raw(
+//             "Has depositado " + String.format("%.2f", totalDeposited[0]) + " monedas. Nuevo balance: " + String.format("%.2f", user.getMoney()) + " monedas"
+//         ));
 
-        return CompletableFuture.completedFuture(null);
-    }
-}
+//         return CompletableFuture.completedFuture(null);
+//     }
+// }
