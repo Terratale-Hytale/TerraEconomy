@@ -45,7 +45,7 @@ public class AccountsPage extends InteractiveCustomUIPage<AccountsPage.BindingDa
             uiCommandBuilder.append("#ContentList", "Pages/Account.ui");
             System.out.println("Adding account to UI: " + accounts.get(i).getAccountNumber());
             uiCommandBuilder.set("#ContentList[" + i + "] #AccountLabel.Value", accounts.get(i).getAccountNumber());
-            uiCommandBuilder.set("#ContentList[" + i + "] #AccountText.Text", " - Banco: " + accounts.get(i).getBank().getName() + " - Saldo: " + String.format("%.2f", accounts.get(i).getBalance()) + " monedas");
+            uiCommandBuilder.set("#ContentList[" + i + "] #AccountText.Text", " - Banco: " + accounts.get(i).getBank().getName() + " - Saldo: " + String.format("%.2f", accounts.get(i).getBalance()) + " Liras");
         }
     }
 

@@ -64,9 +64,9 @@ Group #InvoiceComponent {
     Group #Divider {
         LayoutMode: Left;
         Anchor: (Width: 750, Height: 10);
-
-        $C.@Image #DividerLine {
-            Background: (Color: #444444);
+        Label #DividerLine {
+            Background: (Color: #ffffff);
+            Text: "";
             Anchor: (Width: 750, Height: 2);
         }
     }

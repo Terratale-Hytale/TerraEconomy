@@ -15,137 +15,242 @@ import com.hypixel.hytale.server.core.ui.builder.UIEventBuilder;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 
+import terratale.Helpers.InvoiceHelper;
+import terratale.Helpers.InvoiceStatus;
+import terratale.models.BankAccount;
 import terratale.models.Invoice;
 
+import javax.annotation.Nonnull;
 import java.util.Comparator;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
-
-import javax.annotation.Nonnull;
 
 public class InvoicesPage extends InteractiveCustomUIPage<InvoicesPage.UIEventPayload> {
 
-    private List<Invoice> invoices;
+    private final List<Invoice> invoices;
     private String searchFilter = "";
+    private final UUID playerUUID;
 
-    public InvoicesPage(@Nonnull PlayerRef playerRef, @Nonnull CustomPageLifetime lifetime, List<Invoice> invoices) {
+    public InvoicesPage(@Nonnull PlayerRef playerRef,
+                        @Nonnull CustomPageLifetime lifetime,
+                        @Nonnull List<Invoice> invoices,
+                        @Nonnull UUID playerUUID
+                    ) {
         super(playerRef, lifetime, UIEventPayload.CODEC);
         this.invoices = invoices;
+        this.playerUUID = playerUUID;
     }
 
     public static class UIEventPayload {
         public String action;
-
-        public static final BuilderCodec<UIEventPayload> CODEC = ((BuilderCodec.Builder<UIEventPayload>) (BuilderCodec.Builder<UIEventPayload>)
-                BuilderCodec.builder(UIEventPayload.class, UIEventPayload::new)
-                        .append(new KeyedCodec<>("ACTION", Codec.STRING),
-                                (UIEventPayload o, String v) -> o.action = v,
-                                (UIEventPayload o) -> o.action
-                        )
-                        .add()).build();
+        public String query; // <- texto del input
+        public String id; // <- ID de la factura
+        
+        // En tu SDK: add() ENTRE campos (porque append devuelve FieldBuilder)
+        public static final BuilderCodec<UIEventPayload> CODEC =
+                ((BuilderCodec.Builder<UIEventPayload>) (BuilderCodec.Builder<UIEventPayload>)
+                        BuilderCodec.builder(UIEventPayload.class, UIEventPayload::new)
+                                .append(new KeyedCodec<>("ACTION", Codec.STRING),
+                                        (UIEventPayload o, String v) -> o.action = v,
+                                        (UIEventPayload o) -> o.action
+                                )
+                                .add()
+                                // IMPORTANTE: key con @ (como recomiendan en ejemplos reales)
+                                .append(new KeyedCodec<>("@QUERY", Codec.STRING),
+                                        (UIEventPayload o, String v) -> o.query = v,
+                                        (UIEventPayload o) -> o.query
+                                )
+                                .add()
+                                .append(new KeyedCodec<>("ID", Codec.STRING),
+                                        (UIEventPayload o, String v) -> o.id = v,
+                                        (UIEventPayload o) -> o.id
+                                )
+                                .add()
+                ).build();
     }
 
     @Override
-    public void build(@Nonnull Ref<EntityStore> ref, @Nonnull UICommandBuilder uiCommandBuilder,
-            @Nonnull UIEventBuilder uiEventBuilder, @Nonnull Store<EntityStore> store) {
+    public void build(@Nonnull Ref<EntityStore> ref,
+                      @Nonnull UICommandBuilder uiCommandBuilder,
+                      @Nonnull UIEventBuilder uiEventBuilder,
+                      @Nonnull Store<EntityStore> store) {
+
         uiCommandBuilder.append("Pages/Invoices.ui");
 
-        // Filtrar por ID si hay búsqueda activa
-        List<Invoice> filteredInvoices = invoices;
-        if (!searchFilter.isEmpty()) {
-            try {
-                int searchId = Integer.parseInt(searchFilter);
-                filteredInvoices = invoices.stream()
-                        .filter(invoice -> invoice.getId().equals(searchId))
-                        .collect(Collectors.toList());
-            } catch (NumberFormatException e) {
-                // Si no es un número válido, mostrar todas
-                filteredInvoices = invoices;
-            }
-        }
+        // Mantener el texto visible tras cada rebuild (si tu TextField usa otra prop, ajusta aquí)
+        uiCommandBuilder.set("#SearchInput.Value", searchFilter == null ? "" : searchFilter);
 
-        // Ordenar: pendientes primero, luego por fecha
-        List<Invoice> sortedInvoices = filteredInvoices.stream()
-                .sorted(Comparator.comparing((Invoice i) -> !i.getStatus().equals("pending"))
-                        .thenComparing(Invoice::getDueDate))
-                .limit(20)  // Máximo 20 facturas
-                .collect(Collectors.toList());
+        // INPUT -> tiempo real
+        // Esto es exactamente el patrón recomendado: mapear @QUERY a #SearchInput.Value
+        // (NO se manda literal, se evalúa y viaja el valor real del input)
+        EventData inputData = EventData.of("ACTION", "input_search")
+                .append("@QUERY", "#SearchInput.Value");
 
-        // Agregar facturas a la lista
-        for (int i = 0; i < sortedInvoices.size(); i++) {
-            Invoice invoice = sortedInvoices.get(i);
-            uiCommandBuilder.append("#ContentList", "Pages/Invoice.ui");
-            
-            // Formatear el ID
-            String invoiceId = "#" + invoice.getId();
-            uiCommandBuilder.set("#ContentList[" + i + "] #InvoiceID.Text", invoiceId);
-            
-            // Formatear el estado con color
-            String status = invoice.getStatus().toUpperCase();
-            if (invoice.isOverdue()) {
-                status += " [VENCIDA]";
-            }
-            uiCommandBuilder.set("#ContentList[" + i + "] #Status.Text", status);
-            
-            // Formatear el monto
-            String amount = String.format("$%.2f", invoice.getAmount());
-            uiCommandBuilder.set("#ContentList[" + i + "] #Amount.Text", amount);
-            
-            // De y Para
-            uiCommandBuilder.set("#ContentList[" + i + "] #From.Text", "De: " + invoice.getReceptorAccountNumber());
-            uiCommandBuilder.set("#ContentList[" + i + "] #To.Text", "A: " + invoice.getPayerAccountNumber());
-            
-            // Fecha de vencimiento
-            String dueDate = invoice.getDueDate().toString();
-            uiCommandBuilder.set("#ContentList[" + i + "] #DueDate.Text", dueDate);
-            
-            // Descripción
-            String description = invoice.getDescription();
-            if (description.length() > 80) {
-                description = description.substring(0, 77) + "...";
-            }
-            uiCommandBuilder.set("#ContentList[" + i + "] #Description.Text", description);
-        }
-
-        // Agregar eventos para los botones
-        EventData searchData = new EventData();
-        searchData.events().put("ACTION", "search");
         uiEventBuilder.addEventBinding(
-                CustomUIEventBindingType.Activating,
-                "#SearchButton",
-                searchData,
-                true);
+                CustomUIEventBindingType.ValueChanged,
+                "#SearchInput",
+                inputData,
+                false // no bloquear UI mientras escribes
+        );
 
-        EventData clearData = new EventData();
-        clearData.events().put("ACTION", "clear");
+        // Botón limpiar (opcional)
         uiEventBuilder.addEventBinding(
                 CustomUIEventBindingType.Activating,
                 "#ClearButton",
-                clearData,
-                false);
+                EventData.of("ACTION", "clear"),
+                false
+        );
+
+        // (Opcional) Botón buscar: realmente ya no hace falta, pero lo dejamos por si quieres “Enter/click”
+        uiEventBuilder.addEventBinding(
+                CustomUIEventBindingType.Activating,
+                "#SearchButton",
+                EventData.of("ACTION", "search"),
+                false
+        );
+
+        // -----------------------------
+        // Filtrado por ID (searchFilter)
+        // -----------------------------
+        List<Invoice> filtered = invoices;
+
+        if (searchFilter != null && !searchFilter.trim().isEmpty()) {
+            String q = searchFilter.trim();
+            try {
+                filtered = invoices.stream()
+                        .filter(inv -> inv.getPayerAccountNumber() != null && inv.getPayerAccountNumber().equals(q) ||
+                                       inv.getReceptorAccountNumber() != null && inv.getReceptorAccountNumber().equals(q))
+                        .collect(Collectors.toList());
+            } catch (NumberFormatException ignored) {
+                // Si escriben letras, no filtramos por ID (puedes cambiar esto si quieres)
+                filtered = invoices;
+            }
+        }
+
+        List<Invoice> sorted = filtered.stream()
+                .sorted(Comparator.comparing((Invoice i) -> !("pending".equalsIgnoreCase(i.getStatus())))
+                        .thenComparing(Invoice::getDueDate, Comparator.nullsLast(Comparator.naturalOrder())))
+                .limit(20)
+                .collect(Collectors.toList());
+
+        List<BankAccount> accounts = BankAccount.getAllByOwner(playerUUID);
+
+        List<String> accountNumbers = accounts.stream()
+                .map(BankAccount::getAccountNumber)
+                .collect(Collectors.toList());
+
+        // Render lista
+        for (int i = 0; i < sorted.size(); i++) {
+            Invoice invoice = sorted.get(i);
+
+            uiCommandBuilder.append("#ContentList", "Pages/Invoice.ui");
+
+            if (InvoiceStatus.PENDING.equals(invoice.getStatus())) {
+                uiCommandBuilder.append("#ContentList[" + i + "] #SecondRow", "Pages/PayButton.ui");
+                // Aquí podrías añadir bindings para el botón pagar, si quieres
+                uiEventBuilder.addEventBinding(
+                        CustomUIEventBindingType.Activating,
+                        "#ContentList[" + i + "] #PayInvoiceButton",
+                        EventData.of("ACTION", "pay_invoice")
+                                .append("ID", String.valueOf(invoice.getId())),
+                        false
+                );
+
+                uiEventBuilder.addEventBinding(
+                        CustomUIEventBindingType.Activating,
+                        "#ContentList[" + i + "] #CancelInvoiceButton",
+                        EventData.of("ACTION", "cancel_invoice")
+                                .append("ID", String.valueOf(invoice.getId())),
+                        false
+                );
+            }
+
+            uiCommandBuilder.set("#ContentList[" + i + "] #InvoiceID.Text", "#" + invoice.getId());
+
+            String status = (invoice.getStatus() == null ? "UNKNOWN" : invoice.getStatus().toUpperCase());
+            if (invoice.isOverdue()) status += " [VENCIDA]";
+            uiCommandBuilder.set("#ContentList[" + i + "] #Status.Text", status);
+
+            uiCommandBuilder.set("#ContentList[" + i + "] #Amount.Text", String.format("$%.2f", invoice.getAmount()));
+
+            uiCommandBuilder.set("#ContentList[" + i + "] #From.Text", "De: " + invoice.getReceptorAccountNumber() + 
+                    (accountNumbers.contains(invoice.getReceptorAccountNumber()) ? " (Tu)" : ""));
+            uiCommandBuilder.set("#ContentList[" + i + "] #To.Text", "A: " + invoice.getPayerAccountNumber() + 
+                    (accountNumbers.contains(invoice.getPayerAccountNumber()) ? " (Tu)" : ""));
+
+            String dueDate = (invoice.getDueDate() == null) ? "-" : invoice.getDueDate().toString();
+            uiCommandBuilder.set("#ContentList[" + i + "] #DueDate.Text", dueDate);
+
+            String description = invoice.getDescription() == null ? "" : invoice.getDescription();
+            if (description.length() > 80) description = description.substring(0, 77) + "...";
+            uiCommandBuilder.set("#ContentList[" + i + "] #Description.Text", description);
+
+        }
     }
 
     @Override
-    public void handleDataEvent(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store,
-            @Nonnull UIEventPayload data) {
+    public void handleDataEvent(@Nonnull Ref<EntityStore> ref,
+                                @Nonnull Store<EntityStore> store,
+                                @Nonnull UIEventPayload data) {
         super.handleDataEvent(ref, store, data);
-        
-        if ("search".equals(data.action)) {
-            // El botón de búsqueda fue presionado, pero el valor ya debería estar en searchFilter
-            // desde eventos anteriores del input
-            if (!searchFilter.isEmpty()) {
-                this.playerRef.sendMessage(Message.raw("Buscando factura #" + searchFilter));
-            } else {
-                this.playerRef.sendMessage(Message.raw("Ingresa un ID de factura"));
+
+        if (data == null || data.action == null) return;
+
+        switch (data.action) {
+            case "input_search" -> {
+                searchFilter = (data.query == null) ? "" : data.query;
             }
-            this.rebuild();
-        } else if ("clear".equals(data.action)) {
-            searchFilter = "";
-            this.playerRef.sendMessage(Message.raw("Búsqueda limpiada"));
-            this.rebuild();
-        } else if (data.action != null && !data.action.isEmpty()) {
-            // El usuario escribió algo en el campo de búsqueda
-            searchFilter = data.action;
+            case "clear" -> {
+                searchFilter = "";
+                this.rebuild();
+            }
+            case "search" -> {
+                // si quieres que el botón busque también
+                this.rebuild();
+            }
+            case "pay_invoice" -> {
+                if (data instanceof InvoicesPage.UIEventPayload payload && payload != null) {
+                    String idStr = payload.action.equals("pay_invoice") ? payload.id : null;
+                    if (idStr != null) {
+                        try {
+                            InvoiceHelper.payInvoice(Integer.parseInt(idStr), playerUUID);
+                            this.playerRef.sendMessage(Message.raw("Factura #" + idStr + " pagada con éxito."));
+                            invoices.forEach(inv -> {
+                                if (String.valueOf(inv.getId()).equals(idStr)) {
+                                    inv.setStatus(InvoiceStatus.PAID);
+                                }
+                            });
+                            this.rebuild();
+                        } catch (RuntimeException e) {
+                            this.playerRef.sendMessage(Message.raw("Error al pagar la factura #" + idStr + ": " + e.getMessage()));
+                        }
+                    }
+                }
+            }
+            case "cancel_invoice" -> {
+                if (data instanceof InvoicesPage.UIEventPayload payload && payload != null) {
+                    String idStr = payload.action.equals("cancel_invoice") ? payload.id : null;
+                    if (idStr != null) {
+                        try {
+                            Boolean result = InvoiceHelper.rejectInvoice(Integer.parseInt(idStr), playerUUID);
+                            if (result) {
+                                this.playerRef.sendMessage(Message.raw("Factura #" + idStr + " cancelada con éxito."));
+                            } else {
+                                this.playerRef.sendMessage(Message.raw("No se pudo cancelar la factura #" + idStr));
+                            }
+                            invoices.forEach(inv -> {
+                                if (String.valueOf(inv.getId()).equals(idStr)) {
+                                    inv.setStatus(InvoiceStatus.CANCELLED);
+                                }
+                            });
+                            this.rebuild();
+                        } catch (RuntimeException e) {
+                            this.playerRef.sendMessage(Message.raw("Error al cancelar la factura #" + idStr + ": " + e.getMessage()));
+                        }
+                    }
+                }
+            }
         }
     }
 }

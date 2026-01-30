@@ -53,7 +53,7 @@ class MoneyBalanceSubCommand extends AbstractAsyncCommand {
         User user = User.findOrCreate(playerUUID, playerName);
 
         double balance = user.getMoney();
-        player.sendMessage(Message.raw("Tu balance en el bolsillo es: " + String.format("%.2f", balance) + " monedas"));
+        player.sendMessage(Message.raw("Tu balance en el bolsillo es: " + String.format("%.2f", balance) + " Liras"));
 
         return CompletableFuture.completedFuture(null);
     }
@@ -92,7 +92,7 @@ class MoneySetSubCommand extends AbstractAsyncCommand {
         targetUser.setMoney(amount);
         targetUser.saveMoney();
 
-        context.sender().sendMessage(Message.raw("Balance de " + targetUsername + " establecido a " + String.format("%.2f", amount) + " monedas"));
+        context.sender().sendMessage(Message.raw("Balance de " + targetUsername + " establecido a " + String.format("%.2f", amount) + " Liras"));
 
         return CompletableFuture.completedFuture(null);
     }
@@ -128,7 +128,7 @@ class MoneySetSubCommand extends AbstractAsyncCommand {
 //         Double totalAmount = amountArg.get(context);
 //         int amount = (int) Math.floor(totalAmount);
 //         Double cents = totalAmount % 1.0;
-//         player.sendMessage(Message.raw("Intentando retirar: " + totalAmount + " monedas (" + amount + " " + COIN_ITEM_ID + " y " + String.format("%.0f", cents * 100) + " " + CENT_ITEM_ID + ")"));
+//         player.sendMessage(Message.raw("Intentando retirar: " + totalAmount + " Liras (" + amount + " " + COIN_ITEM_ID + " y " + String.format("%.0f", cents * 100) + " " + CENT_ITEM_ID + ")"));
 
 //         if (totalAmount <= 0) {
 //             player.sendMessage(Message.raw("La cantidad debe ser un número positivo."));
@@ -139,7 +139,7 @@ class MoneySetSubCommand extends AbstractAsyncCommand {
 //         double balance = user.getMoney();
 
 //         if (balance < totalAmount) {
-//             player.sendMessage(Message.raw("No tienes suficiente dinero. Tu balance es: " + String.format("%.2f", balance) + " monedas"));
+//             player.sendMessage(Message.raw("No tienes suficiente dinero. Tu balance es: " + String.format("%.2f", balance) + " Liras"));
 //             return CompletableFuture.completedFuture(null);
 //         }
 
@@ -244,7 +244,7 @@ class MoneySetSubCommand extends AbstractAsyncCommand {
 //         user.saveMoney();
 
 //         player.sendMessage(Message.raw(
-//             "Has depositado " + String.format("%.2f", totalDeposited[0]) + " monedas. Nuevo balance: " + String.format("%.2f", user.getMoney()) + " monedas"
+//             "Has depositado " + String.format("%.2f", totalDeposited[0]) + " Liras. Nuevo balance: " + String.format("%.2f", user.getMoney()) + " Liras"
 //         ));
 
 //         return CompletableFuture.completedFuture(null);

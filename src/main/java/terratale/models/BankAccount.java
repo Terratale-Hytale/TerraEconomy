@@ -160,6 +160,47 @@ public class BankAccount extends Model {
         
         return accounts;
     }
+
+    public static List<BankAccount> getAllByOwner( UUID ownerUUID ) {
+        List<BankAccount> accounts = new ArrayList<>();
+        if (connection == null) {
+            logError("Cannot find bank accounts: connection is null");
+            return accounts;
+        }
+        
+        String sql = "SELECT * FROM bank_accounts JOIN bank_account_owners ON bank_accounts.id = bank_account_owners.account_id WHERE bank_account_owners.owner_uuid = ?";
+        
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setObject(1, ownerUUID);
+            ResultSet rs = pstmt.executeQuery();
+            
+            while (rs.next()) {
+                Double withdrawFee = rs.getDouble("withdraw_fee");
+                if (rs.wasNull()) withdrawFee = null;
+                
+                Double depositFee = rs.getDouble("deposit_fee");
+                if (rs.wasNull()) depositFee = null;
+                
+                Double transactionsFee = rs.getDouble("transactions_fee");
+                if (rs.wasNull()) transactionsFee = null;
+                
+                accounts.add(new BankAccount(
+                    rs.getInt("id"),
+                    rs.getInt("bank_id"),
+                    rs.getDouble("balance"),
+                    withdrawFee,
+                    depositFee,
+                    transactionsFee,
+                    rs.getString("account_number")
+                ));
+            }
+        } catch (SQLException e) {
+            logError("Failed to find bank accounts for owner: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
+        return accounts;
+    }
     
     public void save() {
         if (connection == null) {

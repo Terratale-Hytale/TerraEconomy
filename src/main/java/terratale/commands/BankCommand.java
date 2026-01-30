@@ -76,7 +76,7 @@ class BankCreateSubCommand extends AbstractAsyncCommand {
         Double bankCost = PorcentualHelper.calculatePorcentual(TerratalePlugin.get().config().bankCreationCost);
 
         if (user.getMoney() < bankCost) {
-            context.sender().sendMessage(Message.raw("No tienes suficientes monedas para crear un banco. Costo: " + bankCost + " monedas."));
+            context.sender().sendMessage(Message.raw("No tienes suficientes Liras para crear un banco. Costo: " + bankCost + " Liras."));
             return CompletableFuture.completedFuture(null);
         }
 
@@ -225,7 +225,7 @@ class BankBalanceSubCommand extends AbstractAsyncCommand {
         }
 
         context.sender().sendMessage(Message.raw("=== " + bank.getName() + " ==="));
-        context.sender().sendMessage(Message.raw("Balance: " + String.format("%.2f", bank.getBalance()) + " monedas"));
+        context.sender().sendMessage(Message.raw("Balance: " + String.format("%.2f", bank.getBalance()) + " Liras"));
         context.sender().sendMessage(Message.raw("Comisiones:"));
         context.sender().sendMessage(Message.raw("  - Retiro: " + bank.getWithdrawFee() + "%"));
         context.sender().sendMessage(Message.raw("  - Depósito: " + bank.getDepositFee() + "%"));
@@ -268,7 +268,7 @@ class BankListSubCommand extends AbstractAsyncCommand {
             context.sender().sendMessage(Message.raw(
                 "#" + bank.getId() +
                 " - " + bank.getName() +
-                " (Balance: " + String.format("%.2f", bank.getBalance()) + " monedas)"
+                " (Balance: " + String.format("%.2f", bank.getBalance()) + " Liras)"
             ));
         }
 
@@ -323,7 +323,7 @@ class AccountsListSubCommand extends AbstractAsyncCommand {
                 context.sender().sendMessage(Message.raw(
                     "Cuenta:" + accountNumber +
                     " - Banco ID: " + acc.getBankId() +
-                    " (Balance: " + String.format("%.2f", acc.getBalance()) + " monedas)"
+                    " (Balance: " + String.format("%.2f", acc.getBalance()) + " Liras)"
                 ));
             }
         return CompletableFuture.completedFuture(null);
@@ -379,7 +379,7 @@ class BankDepositSubCommand extends AbstractAsyncCommand {
         }
 
         if (user.getMoney() < amount) {
-            context.sender().sendMessage(Message.raw("No tienes suficientes monedas."));
+            context.sender().sendMessage(Message.raw("No tienes suficientes Liras."));
             return CompletableFuture.completedFuture(null);
         }
 
@@ -400,11 +400,11 @@ class BankDepositSubCommand extends AbstractAsyncCommand {
         transaction.save();
 
         context.sender().sendMessage(Message.raw("Depósito realizado exitosamente!"));
-        context.sender().sendMessage(Message.raw("Cantidad depositada: " + String.format("%.2f", actualDeposit) + " monedas"));
+        context.sender().sendMessage(Message.raw("Cantidad depositada: " + String.format("%.2f", actualDeposit) + " Liras"));
         if (feeAmount > 0) {
-            context.sender().sendMessage(Message.raw("Comisión aplicada: " + String.format("%.2f", feeAmount) + " monedas (" + depositFee + "%)"));
+            context.sender().sendMessage(Message.raw("Comisión aplicada: " + String.format("%.2f", feeAmount) + " Liras (" + depositFee + "%)"));
         }
-        context.sender().sendMessage(Message.raw("Nuevo balance del banco: " + String.format("%.2f", bank.getBalance()) + " monedas"));
+        context.sender().sendMessage(Message.raw("Nuevo balance del banco: " + String.format("%.2f", bank.getBalance()) + " Liras"));
 
         return CompletableFuture.completedFuture(null);
     }
@@ -480,11 +480,11 @@ class BankWithdrawSubCommand extends AbstractAsyncCommand {
         transaction.save();
 
         context.sender().sendMessage(Message.raw("Retiro realizado exitosamente!"));
-        context.sender().sendMessage(Message.raw("Cantidad retirada: " + String.format("%.2f", actualWithdraw) + " monedas"));
+        context.sender().sendMessage(Message.raw("Cantidad retirada: " + String.format("%.2f", actualWithdraw) + " Liras"));
         if (feeAmount > 0) {
-            context.sender().sendMessage(Message.raw("Comisión aplicada: " + String.format("%.2f", feeAmount) + " monedas (" + withdrawFee + "%)"));
+            context.sender().sendMessage(Message.raw("Comisión aplicada: " + String.format("%.2f", feeAmount) + " Liras (" + withdrawFee + "%)"));
         }
-        context.sender().sendMessage(Message.raw("Nuevo balance del banco: " + String.format("%.2f", bank.getBalance()) + " monedas"));
+        context.sender().sendMessage(Message.raw("Nuevo balance del banco: " + String.format("%.2f", bank.getBalance()) + " Liras"));
 
         return CompletableFuture.completedFuture(null);
     }
@@ -624,7 +624,7 @@ class BankDeleteSubCommand extends AbstractAsyncCommand {
         context.sender().sendMessage(Message.raw("Banco eliminado exitosamente!"));
         context.sender().sendMessage(Message.raw("Cuentas eliminadas: " + accounts.size()));
         if (totalTransferred > 0) {
-            context.sender().sendMessage(Message.raw("Fondos transferidos al gobierno: " + String.format("%.2f", totalTransferred) + " monedas"));
+            context.sender().sendMessage(Message.raw("Fondos transferidos al gobierno: " + String.format("%.2f", totalTransferred) + " Liras"));
         }
 
         return CompletableFuture.completedFuture(null);

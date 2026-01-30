@@ -21,7 +21,7 @@ $C.@PageOverlay {
           
           Label #SearchLabel {
             Style: (TextColor: #ffffff);
-            Text: "Buscar por ID:";
+            Text: "Buscar por Cuenta:";
             Anchor: (Width: 150, Height: 30);
           }
 
@@ -31,20 +31,29 @@ $C.@PageOverlay {
             Anchor: (Width: 200, Height: 30);
           }
 
+          Label #Space2 {
+            Anchor: (Width: 25, Height: 30);
+          }
+
           $C.@TextButton #SearchButton {
             @Text = "Buscar";
-            Anchor: (Width: 100, Height: 30);
+            Anchor: (Width: 175, Height: 30);
+          }
+
+          Label #Space {
+            Anchor: (Width: 25, Height: 30);
           }
 
           $C.@TextButton #ClearButton {
             @Text = "Limpiar";
-            Anchor: (Width: 100, Height: 30);
+            Anchor: (Width: 175, Height: 30);
           }
         }
 
         Group #ContentList {
           ScrollbarStyle: $C.@DefaultScrollbarStyle;
           LayoutMode: TopScrolling;
+          Anchor: (Width: 800, Height: 375);
         }
       }
   }

@@ -1,14 +1,10 @@
 package terratale.commands;
 
-import terratale.models.Bank;
 import terratale.models.BankAccount;
 import terratale.models.BankAccountOwner;
-import terratale.models.BankTransaction;
 import terratale.models.Invoice;
-import terratale.models.Transaction;
-import terratale.models.User;
-import terratale.Helpers.TransactionTypes;
-import terratale.plugin.TerratalePlugin;
+import terratale.Helpers.InvoiceHelper;
+import terratale.responses.InvoicePaymentResponse;
 
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.command.system.CommandContext;
@@ -147,125 +143,21 @@ class InvoicePaySubCommand extends AbstractAsyncCommand {
 
         int invoiceId = invoiceIdArg.get(context);
         UUID playerUUID = context.sender().getUuid();
+         InvoicePaymentResponse response;
 
-        // Buscar la factura
-        Invoice invoice = Invoice.find(invoiceId);
-        if (invoice == null) {
-            context.sender().sendMessage(Message.raw("Factura no encontrada."));
+        try {
+            response = InvoiceHelper.payInvoice(invoiceId, playerUUID);
+        } catch (RuntimeException e) {
+            context.sender().sendMessage(Message.raw("Error al pagar la factura: " + e.getMessage()));
             return CompletableFuture.completedFuture(null);
         }
-
-        // Verificar que la factura esté pendiente
-        if (!"pending".equals(invoice.getStatus())) {
-            context.sender().sendMessage(Message.raw("Esta factura ya fue procesada (estado: " + invoice.getStatus() + ")."));
-            return CompletableFuture.completedFuture(null);
-        }
-
-        // Obtener las cuentas
-        BankAccount payerAcc = BankAccount.findByAccountNumber(invoice.getPayerAccountNumber());
-        BankAccount receptorAcc = BankAccount.findByAccountNumber(invoice.getReceptorAccountNumber());
-        BankAccount govAccount = BankAccount.findByAccountNumber(TerratalePlugin.get().config().gouvernmentNumberAccount);
-
-        if (payerAcc == null || receptorAcc == null) {
-            context.sender().sendMessage(Message.raw("Error: Una de las cuentas ya no existe."));
-            return CompletableFuture.completedFuture(null);
-        }
-
-        // Verificar que el jugador sea dueño de la cuenta pagadora
-        List<Integer> playerAccounts = BankAccountOwner.getAccountsByOwner(playerUUID);
-        if (!playerAccounts.contains(payerAcc.getId())) {
-            context.sender().sendMessage(Message.raw("No eres dueño de la cuenta pagadora."));
-            return CompletableFuture.completedFuture(null);
-        }
-
-        // Obtener banco del pagador
-        Bank payerBank = payerAcc.getBank();
-        if (payerBank == null) {
-            context.sender().sendMessage(Message.raw("Error: El banco de la cuenta pagadora no existe."));
-            return CompletableFuture.completedFuture(null);
-        }
-
-        // Calcular comisiones e impuestos
-        int governmentFeePercent = TerratalePlugin.get().config().taxPercentage;
-        double governmentFeeAmount = (invoice.getAmount() * governmentFeePercent) / 100.0;
-
-        Double bankTransferFeePercent = payerAcc.getTransactionsFee() != null ? 
-            payerAcc.getTransactionsFee() : payerBank.getTransactionsFee();
-        double bankTransferFeeAmount = (invoice.getAmount() * bankTransferFeePercent) / 100.0;
-
-        // Total a deducir de la cuenta del pagador
-        double totalDeducted = invoice.getAmount() + bankTransferFeeAmount;
-
-        // Verificar que haya suficiente saldo en la cuenta del pagador
-        if (payerAcc.getBalance() < totalDeducted) {
-            context.sender().sendMessage(Message.raw("Saldo insuficiente en la cuenta pagadora."));
-            context.sender().sendMessage(Message.raw("Saldo actual: $" + String.format("%.2f", payerAcc.getBalance())));
-            context.sender().sendMessage(Message.raw("Monto factura: $" + String.format("%.2f", invoice.getAmount())));
-            context.sender().sendMessage(Message.raw("Comisión bancaria (" + String.format("%.2f", bankTransferFeePercent) + "%): $" + String.format("%.2f", bankTransferFeeAmount)));
-            context.sender().sendMessage(Message.raw("Total requerido: $" + String.format("%.2f", totalDeducted)));
-            return CompletableFuture.completedFuture(null);
-        }
-
-        // Realizar la transferencia
-        payerAcc.setBalance(payerAcc.getBalance() - totalDeducted);
-        receptorAcc.setBalance(receptorAcc.getBalance() + (invoice.getAmount() - governmentFeeAmount));
-        
-        if (govAccount != null) {
-            govAccount.setBalance(govAccount.getBalance() + governmentFeeAmount);
-            govAccount.save();
-        }
-        
-        // Agregar comisión al banco
-        payerBank.setBalance(payerBank.getBalance() + bankTransferFeeAmount);
-        
-        payerAcc.save();
-        receptorAcc.save();
-        payerBank.save();
-
-        // Registrar transacciones
-        Transaction payerTransaction = new Transaction(
-            payerAcc.getId(),
-            TransactionTypes.INVOICE_WITHDRAWAL,
-            totalDeducted,
-            playerUUID.toString()
-        );
-        payerTransaction.save();
-
-        Transaction receptorTransaction = new Transaction(
-            receptorAcc.getId(),
-            TransactionTypes.INVOICE_DEPOSIT,
-            invoice.getAmount() - governmentFeeAmount,
-            playerUUID.toString()
-        );
-        receptorTransaction.save();
-
-        if (govAccount != null) {
-            Transaction govTransaction = new Transaction(
-                govAccount.getId(),
-                TransactionTypes.GOVERNMENT_FEE,
-                governmentFeeAmount,
-                playerUUID.toString()
-            );
-            govTransaction.save();
-        }
-
-        BankTransaction bankTransaction = new BankTransaction(
-            payerBank.getId(),
-            TransactionTypes.TRANSFER_FEE,
-            bankTransferFeeAmount,
-            playerUUID.toString()
-        );
-        bankTransaction.save();
-
-        // Marcar la factura como pagada
-        invoice.markAsPaid(playerUUID.toString());
 
         context.sender().sendMessage(Message.raw("Factura pagada exitosamente!"));
-        context.sender().sendMessage(Message.raw("ID: #" + invoice.getId()));
-        context.sender().sendMessage(Message.raw("Monto factura: $" + String.format("%.2f", invoice.getAmount())));
-        context.sender().sendMessage(Message.raw("Comisión bancaria: $" + String.format("%.2f", bankTransferFeeAmount)));
-        context.sender().sendMessage(Message.raw("Total deducido: $" + String.format("%.2f", totalDeducted)));
-        context.sender().sendMessage(Message.raw("Nuevo saldo: $" + String.format("%.2f", payerAcc.getBalance())));
+        context.sender().sendMessage(Message.raw("ID: #" + invoiceId));
+        context.sender().sendMessage(Message.raw("Monto factura: $" + String.format("%.2f", response.getInvoice().getAmount())));
+        context.sender().sendMessage(Message.raw("Comisión bancaria: $" + String.format("%.2f", response.getBankTransferFee())));
+        context.sender().sendMessage(Message.raw("Total deducido: $" + String.format("%.2f", response.getTotalDeducted())));
+        context.sender().sendMessage(Message.raw("Nuevo saldo: $" + String.format("%.2f", response.getNewBalance())));
 
         return CompletableFuture.completedFuture(null);
     }
@@ -292,40 +184,16 @@ class InvoiceRejectSubCommand extends AbstractAsyncCommand {
         int invoiceId = invoiceIdArg.get(context);
         UUID playerUUID = context.sender().getUuid();
 
-        // Buscar la factura
-        Invoice invoice = Invoice.find(invoiceId);
-        if (invoice == null) {
-            context.sender().sendMessage(Message.raw("Factura no encontrada."));
+        try {
+            InvoiceHelper.rejectInvoice(invoiceId, playerUUID);
+        } catch (RuntimeException e) {
+            context.sender().sendMessage(Message.raw("Error al rechazar la factura: " + e.getMessage()));
             return CompletableFuture.completedFuture(null);
         }
-
-        // Verificar que la factura esté pendiente
-        if (!"pending".equals(invoice.getStatus())) {
-            context.sender().sendMessage(Message.raw("Esta factura ya fue procesada (estado: " + invoice.getStatus() + ")."));
-            return CompletableFuture.completedFuture(null);
-        }
-
-        // Obtener la cuenta pagadora
-        BankAccount payerAcc = BankAccount.findByAccountNumber(invoice.getPayerAccountNumber());
         
-        if (payerAcc == null) {
-            context.sender().sendMessage(Message.raw("Error: La cuenta pagadora ya no existe."));
-            return CompletableFuture.completedFuture(null);
-        }
-
-        // Verificar que el jugador sea dueño de la cuenta pagadora
-        List<Integer> playerAccounts = BankAccountOwner.getAccountsByOwner(playerUUID);
-        if (!playerAccounts.contains(payerAcc.getId())) {
-            context.sender().sendMessage(Message.raw("No eres dueño de la cuenta pagadora. Solo el pagador puede rechazar una factura."));
-            return CompletableFuture.completedFuture(null);
-        }
-
-        // Marcar la factura como cancelada
-        invoice.markAsCancelled(playerUUID.toString());
 
         context.sender().sendMessage(Message.raw("Factura rechazada exitosamente."));
-        context.sender().sendMessage(Message.raw("ID: #" + invoice.getId()));
-        context.sender().sendMessage(Message.raw("Descripción: " + invoice.getDescription()));
+        context.sender().sendMessage(Message.raw("ID: #" + invoiceId));
 
         return CompletableFuture.completedFuture(null);
     }

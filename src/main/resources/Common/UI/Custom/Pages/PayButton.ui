@@ -1,0 +1,20 @@
+$C = "../Common.ui";
+
+Group #PayButtonComponent {
+    LayoutMode: Left;
+    Anchor: (Width: 420, Height: 30);
+
+    $C.@TextButton #PayInvoiceButton {
+        @Text = "Pagar";
+        Anchor: (Width: 150, Height: 30);
+    }
+
+    Label #Space {
+        Anchor: (Width: 20, Height: 30);
+    }
+
+    $C.@CancelTextButton #CancelInvoiceButton {
+        Anchor: (Width: 150, Height: 30);
+        Text: "Rechazar";
+    }
+}

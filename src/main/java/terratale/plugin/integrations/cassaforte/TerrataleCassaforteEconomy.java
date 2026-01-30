@@ -23,12 +23,12 @@ public class TerrataleCassaforteEconomy extends AbstractEconomy {
 
     @Override
     public String currencyNameSingular() {
-        return "moneda";
+        return "Lira";
     }
 
     @Override
     public String currencyNamePlural() {
-        return "monedas";
+        return "Liras";
     }
 
     @Override

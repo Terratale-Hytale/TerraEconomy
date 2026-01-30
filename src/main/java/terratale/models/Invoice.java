@@ -9,6 +9,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import terratale.Helpers.InvoiceStatus;
+
 public class Invoice extends Model {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
@@ -35,7 +37,7 @@ public class Invoice extends Model {
         this.amount = amount;
         this.dueDate = dueDate;
         this.description = description;
-        this.status = "pending";
+        this.status = InvoiceStatus.PENDING;
 
         ObjectNode root = MAPPER.createObjectNode();
         ArrayNode eventsArray = MAPPER.createArrayNode();
@@ -305,21 +307,21 @@ public class Invoice extends Model {
     
     // Marcar como pagada
     public void markAsPaid(String paidBy) {
-        this.status = "paid";
+        this.status = InvoiceStatus.PAID;
         addEvent("paid", paidBy);
         save();
     }
     
     // Marcar como cancelada
     public void markAsCancelled(String cancelledBy) {
-        this.status = "cancelled";
+        this.status = InvoiceStatus.CANCELLED;
         addEvent("cancelled", cancelledBy);
         save();
     }
     
     // Verificar si está vencida
     public boolean isOverdue() {
-        if (dueDate == null || !"pending".equals(status)) {
+        if (dueDate == null || !InvoiceStatus.PENDING.equals(status)) {
             return false;
         }
         return new Date(System.currentTimeMillis()).after(dueDate);

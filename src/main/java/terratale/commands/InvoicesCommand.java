@@ -75,7 +75,7 @@ public class InvoicesCommand extends AbstractPlayerCommand {
         }
 
         // Abrir la interfaz gráfica con todas las facturas
-        InvoicesPage page = new InvoicesPage(playerRef, CustomPageLifetime.CanDismiss, allInvoices);
+        InvoicesPage page = new InvoicesPage(playerRef, CustomPageLifetime.CanDismiss, allInvoices, playerUUID);
         player.getPageManager().openCustomPage(ref, store, page);
     }
 }

@@ -100,7 +100,7 @@ class AccountCreateSubCommand extends AbstractAsyncCommand {
             player.sendMessage(Message.raw("Cuenta creada exitosamente!"));
             player.sendMessage(Message.raw("Banco: " + bank.getName()));
             player.sendMessage(Message.raw("ID de cuenta: #" + account.getId()));
-            player.sendMessage(Message.raw("Balance: 0.00 monedas"));
+            player.sendMessage(Message.raw("Balance: 0.00 Liras"));
         }
 
         return CompletableFuture.completedFuture(null);
@@ -147,7 +147,7 @@ class AccountListSubCommand extends AbstractPlayerCommand {
                     
                     player.sendMessage(Message.raw("Cuenta: " + accountNumber + 
                         " - " + bankName + 
-                        " (Balance: " + String.format("%.2f", account.getBalance()) + " monedas)"));
+                        " (Balance: " + String.format("%.2f", account.getBalance()) + " Liras)"));
                 }
             }
         }
@@ -238,7 +238,7 @@ class AccountWithdrawSubCommand extends AbstractAsyncCommand {
         if (account.getBalance() < amount) {
             if (player != null) {
                 player.sendMessage(Message.raw("Balance insuficiente"));
-                player.sendMessage(Message.raw("Balance actual: " + String.format("%.2f", account.getBalance()) + " monedas"));
+                player.sendMessage(Message.raw("Balance actual: " + String.format("%.2f", account.getBalance()) + " Liras"));
             }
             return CompletableFuture.completedFuture(null);
         }
@@ -252,7 +252,7 @@ class AccountWithdrawSubCommand extends AbstractAsyncCommand {
         // Verificar que puede pagar la comisión
         if (account.getBalance() < totalDeducted) {
             if (player != null) {
-                player.sendMessage(Message.raw("Balance insuficiente (incluyendo comisión de " + String.format("%.2f", feeAmount) + " monedas)"));
+                player.sendMessage(Message.raw("Balance insuficiente (incluyendo comisión de " + String.format("%.2f", feeAmount) + " Liras)"));
             }
             return CompletableFuture.completedFuture(null);
         }
@@ -291,9 +291,9 @@ class AccountWithdrawSubCommand extends AbstractAsyncCommand {
 
         if (player != null) {
             player.sendMessage(Message.raw("Retiro exitoso!"));
-            player.sendMessage(Message.raw("Cantidad retirada: " + String.format("%.2f", amount) + " monedas"));
-            player.sendMessage(Message.raw("Comisión (" + withdrawFee + "%): " + String.format("%.2f", feeAmount) + " monedas"));
-            player.sendMessage(Message.raw("Nuevo balance: " + String.format("%.2f", account.getBalance()) + " monedas"));
+            player.sendMessage(Message.raw("Cantidad retirada: " + String.format("%.2f", amount) + " Liras"));
+            player.sendMessage(Message.raw("Comisión (" + withdrawFee + "%): " + String.format("%.2f", feeAmount) + " Liras"));
+            player.sendMessage(Message.raw("Nuevo balance: " + String.format("%.2f", account.getBalance()) + " Liras"));
         }
 
         return CompletableFuture.completedFuture(null);
@@ -380,7 +380,7 @@ class AccountDepositSubCommand extends AbstractAsyncCommand {
             if (player != null) {
                 player.sendMessage(Message.raw("No tienes suficiente dinero para depositar esa cantidad."));
                 if (user != null) {
-                    player.sendMessage(Message.raw("Dinero disponible: " + String.format("%.2f", user.getMoney()) + " monedas"));
+                    player.sendMessage(Message.raw("Dinero disponible: " + String.format("%.2f", user.getMoney()) + " Liras"));
                 }
             }
             return CompletableFuture.completedFuture(null);
@@ -419,10 +419,10 @@ class AccountDepositSubCommand extends AbstractAsyncCommand {
 
         if (player != null) {
             player.sendMessage(Message.raw("Depósito exitoso!"));
-            player.sendMessage(Message.raw("Cantidad depositada: " + String.format("%.2f", amount) + " monedas"));
-            player.sendMessage(Message.raw("Comisión (" + depositFee + "%): " + String.format("%.2f", feeAmount) + " monedas"));
-            player.sendMessage(Message.raw("Monto neto: " + String.format("%.2f", netDeposit) + " monedas"));
-            player.sendMessage(Message.raw("Nuevo balance: " + String.format("%.2f", account.getBalance()) + " monedas"));
+            player.sendMessage(Message.raw("Cantidad depositada: " + String.format("%.2f", amount) + " Liras"));
+            player.sendMessage(Message.raw("Comisión (" + depositFee + "%): " + String.format("%.2f", feeAmount) + " Liras"));
+            player.sendMessage(Message.raw("Monto neto: " + String.format("%.2f", netDeposit) + " Liras"));
+            player.sendMessage(Message.raw("Nuevo balance: " + String.format("%.2f", account.getBalance()) + " Liras"));
         }
 
         return CompletableFuture.completedFuture(null);
@@ -515,8 +515,8 @@ class AccountTransferSubCommand extends AbstractAsyncCommand {
         // Verificar que hay suficiente balance
         if (fromAccount.getBalance() < totalDeducted) {
             player.sendMessage(Message.raw("Balance insuficiente"));
-            player.sendMessage(Message.raw("Balance actual: " + String.format("%.2f", fromAccount.getBalance()) + " monedas"));
-            player.sendMessage(Message.raw("Cantidad + comisión: " + String.format("%.2f", totalDeducted) + " monedas"));
+            player.sendMessage(Message.raw("Balance actual: " + String.format("%.2f", fromAccount.getBalance()) + " Liras"));
+            player.sendMessage(Message.raw("Cantidad + comisión: " + String.format("%.2f", totalDeducted) + " Liras"));
             return CompletableFuture.completedFuture(null);
         }
 
@@ -561,9 +561,9 @@ class AccountTransferSubCommand extends AbstractAsyncCommand {
         player.sendMessage(Message.raw("Transferencia exitosa!"));
         player.sendMessage(Message.raw("De: " + fromAccountNumber + " (" + fromBank.getName() + ")"));
         player.sendMessage(Message.raw("A: " + toAccountNumber + " (" + toBank.getName() + ")"));
-        player.sendMessage(Message.raw("Cantidad transferida: " + String.format("%.2f", amount) + " monedas"));
-        player.sendMessage(Message.raw("Comisión (" + transferFee + "%): " + String.format("%.2f", feeAmount) + " monedas"));
-        player.sendMessage(Message.raw("Nuevo balance cuenta origen: " + String.format("%.2f", fromAccount.getBalance()) + " monedas"));
+        player.sendMessage(Message.raw("Cantidad transferida: " + String.format("%.2f", amount) + " Liras"));
+        player.sendMessage(Message.raw("Comisión (" + transferFee + "%): " + String.format("%.2f", feeAmount) + " Liras"));
+        player.sendMessage(Message.raw("Nuevo balance cuenta origen: " + String.format("%.2f", fromAccount.getBalance()) + " Liras"));
 
         return CompletableFuture.completedFuture(null);
     }
@@ -802,7 +802,7 @@ class AccountRemoveSubCommand extends AbstractAsyncCommand {
         // Verificar que la cuenta tenga balance 0
         if (account.getBalance() > 0) {
             player.sendMessage(Message.raw("No puedes eliminar una cuenta con fondos"));
-            player.sendMessage(Message.raw("Balance actual: " + String.format("%.2f", account.getBalance()) + " monedas"));
+            player.sendMessage(Message.raw("Balance actual: " + String.format("%.2f", account.getBalance()) + " Liras"));
             player.sendMessage(Message.raw("Retira todos los fondos antes de eliminar la cuenta"));
             return CompletableFuture.completedFuture(null);
         }
