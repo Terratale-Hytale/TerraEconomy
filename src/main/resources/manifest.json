@@ -5,7 +5,9 @@
   "Description": "Sistema de economía y bancos para Hytale",
   "Main": "terratale.plugin.TerratalePlugin",
   "ServerVersion": "*",
-  "Dependencies": {},
+  "Dependencies": {
+    "TheNewEconomy:VaultUnlocked": "*"
+  },
   "OptionalDependencies": {
   },
   "LoadBefore": {},

@@ -37,14 +37,14 @@ public class User extends Model {
         User user = find(uuid);
         
         if (user == null) {
-            user = new User(uuid, username);
-            user.save();
             String account = TerratalePlugin.get().config().gouvernmentNumberAccount;
 
             BankAccount govAccount = BankAccount.findByAccountNumber(account);
 
             if (govAccount != null) {
-                // Dar dinero inicial desde la cuenta del gobierno
+                user = new User(uuid, username);
+                user.save();
+                
                 double initialMoney = PorcentualHelper.calculatePorcentual(TerratalePlugin.get().config().initialMoney);
                 govAccount.setBalance(govAccount.getBalance() - initialMoney);
 

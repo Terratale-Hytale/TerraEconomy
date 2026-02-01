@@ -1,8 +1,10 @@
 package terratale.commands;
 
 import terratale.models.BankAccount;
+import terratale.models.BankAccountOwner;
 import terratale.models.Invoice;
 import terratale.models.SchedulePayment;
+import terratale.models.User;
 import terratale.models.ScheduleLog;
 import terratale.plugin.TerratalePlugin;
 
@@ -19,6 +21,7 @@ import javax.annotation.Nonnull;
 import java.sql.Date;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 public class SchedulePaymentCommand extends AbstractCommandCollection {
@@ -68,35 +71,46 @@ class SchedulePaymentCreateSubCommand extends AbstractAsyncCommand {
         int dayOfMonth = dayOfMonthArg.get(context);
         int daysUntilDue = daysUntilDueArg.get(context);
         String description = descriptionArg.get(context);
+        UUID playerUUID = context.sender().getUuid();
+        List<Integer> userAccountsIds = BankAccountOwner.getAccountsByOwner(playerUUID);
+
+        description = description.replace("\"", "");
+        description = description.replace("\'", "");
 
         // Validar que el monto sea positivo
         if (amount <= 0) {
-            context.sender().sendMessage(Message.raw("§cEl monto debe ser mayor a 0."));
+            context.sender().sendMessage(Message.raw("El monto debe ser mayor a 0."));
             return CompletableFuture.completedFuture(null);
         }
 
         // Validar día del mes
         if (dayOfMonth < 1 || dayOfMonth > 28) {
-            context.sender().sendMessage(Message.raw("§cEl día del mes debe estar entre 1 y 28."));
+            context.sender().sendMessage(Message.raw("El día del mes debe estar entre 1 y 28."));
             return CompletableFuture.completedFuture(null);
         }
 
         // Validar días hasta vencimiento
         if (daysUntilDue <= 0 || daysUntilDue > 30) {
-            context.sender().sendMessage(Message.raw("§cLos días hasta el vencimiento deben estar entre 1 y 30."));
+            context.sender().sendMessage(Message.raw("Los días hasta el vencimiento deben estar entre 1 y 30."));
             return CompletableFuture.completedFuture(null);
         }
 
         // Verificar que las cuentas existan
         BankAccount receptorAcc = BankAccount.findByAccountNumber(receptorAccount);
         if (receptorAcc == null) {
-            context.sender().sendMessage(Message.raw("§cLa cuenta receptora no existe."));
+            context.sender().sendMessage(Message.raw("La cuenta receptora no existe."));
             return CompletableFuture.completedFuture(null);
         }
 
         BankAccount payerAcc = BankAccount.findByAccountNumber(payerAccount);
         if (payerAcc == null) {
-            context.sender().sendMessage(Message.raw("§cLa cuenta pagadora no existe."));
+            context.sender().sendMessage(Message.raw("La cuenta pagadora no existe."));
+            return CompletableFuture.completedFuture(null);
+        }
+
+        // Verificar si la cuenta que recibe pertenece al jugador
+        if (!userAccountsIds.contains(receptorAcc.getId())) {
+            context.sender().sendMessage(Message.raw("No estas autorizado a utilizar la cuenta " + receptorAccount + "."));
             return CompletableFuture.completedFuture(null);
         }
         
@@ -296,6 +310,9 @@ class SchedulePaymentProcessSubCommand extends AbstractAsyncCommand {
                     Date.valueOf(dueDate),
                     sp.getDescription()
                 );
+                invoice.save();
+
+                invoice.addEvent("generated_by", "gouvernement_system");
                 invoice.save();
 
                 // Registrar log de éxito

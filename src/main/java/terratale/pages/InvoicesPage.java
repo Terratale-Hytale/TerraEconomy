@@ -1,5 +1,6 @@
 package terratale.pages;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.hypixel.hytale.codec.Codec;
 import com.hypixel.hytale.codec.KeyedCodec;
 import com.hypixel.hytale.codec.builder.BuilderCodec;
@@ -117,14 +118,38 @@ public class InvoicesPage extends InteractiveCustomUIPage<InvoicesPage.UIEventPa
 
         if (searchFilter != null && !searchFilter.trim().isEmpty()) {
             String q = searchFilter.trim();
-            try {
-                filtered = invoices.stream()
-                        .filter(inv -> inv.getPayerAccountNumber() != null && inv.getPayerAccountNumber().equals(q) ||
-                                       inv.getReceptorAccountNumber() != null && inv.getReceptorAccountNumber().equals(q))
-                        .collect(Collectors.toList());
-            } catch (NumberFormatException ignored) {
-                // Si escriben letras, no filtramos por ID (puedes cambiar esto si quieres)
-                filtered = invoices;
+            if (q.startsWith("id:")) {
+                try {
+                    int idFilter = Integer.parseInt(q.substring(3).trim());
+                    filtered = invoices.stream()
+                            .filter(inv -> inv.getId() == idFilter)
+                            .collect(Collectors.toList());
+                    // Salir ya que hemos filtrado por ID
+                } catch (NumberFormatException ignored) {
+                    // Si no es un número válido, seguimos con el filtro normal
+                }
+            } else if (q.startsWith("desc:")) {
+                try {
+                    String descFilter = q.substring(5).trim();
+                    filtered = invoices.stream()
+                            .filter(inv -> inv.getDescription() != null && inv.getDescription().toLowerCase().contains(descFilter.toLowerCase()))
+                            .collect(Collectors.toList());
+                    // Salir ya que hemos filtrado por descripción
+                } catch (NumberFormatException ignored) {
+                    // Si no es un número válido, seguimos con el filtro normal
+                }
+            } else {
+                try {
+                    filtered = invoices.stream()
+                            .filter(inv -> inv.getPayerAccountNumber() != null && inv.getPayerAccountNumber().equals(q) ||
+                                        inv.getReceptorAccountNumber() != null && inv.getReceptorAccountNumber().equals(q) ||
+                                        inv.getDescription() != null && inv.getDescription().toLowerCase().contains(q.toLowerCase())
+                                        )
+                            .collect(Collectors.toList());
+                } catch (NumberFormatException ignored) {
+                    // Si escriben letras, no filtramos por ID (puedes cambiar esto si quieres)
+                    filtered = invoices;
+                }
             }
         }
 
@@ -146,7 +171,8 @@ public class InvoicesPage extends InteractiveCustomUIPage<InvoicesPage.UIEventPa
 
             uiCommandBuilder.append("#ContentList", "Pages/Invoice.ui");
 
-            if (InvoiceStatus.PENDING.equals(invoice.getStatus())) {
+            if (InvoiceStatus.PENDING.equals(invoice.getStatus()) && !invoice.isOverdue() &&
+                    accountNumbers.contains(invoice.getPayerAccountNumber())) {
                 uiCommandBuilder.append("#ContentList[" + i + "] #SecondRow", "Pages/PayButton.ui");
                 // Aquí podrías añadir bindings para el botón pagar, si quieres
                 uiEventBuilder.addEventBinding(
@@ -165,6 +191,10 @@ public class InvoicesPage extends InteractiveCustomUIPage<InvoicesPage.UIEventPa
                         false
                 );
             }
+
+            if (invoice.hasGeneratedByGovernmentSystem()) {
+                uiCommandBuilder.append("#ContentList[" + i + "] #FirstRow", "Pages/GouvernmentAdvise.ui");
+            } 
 
             uiCommandBuilder.set("#ContentList[" + i + "] #InvoiceID.Text", "#" + invoice.getId());
 

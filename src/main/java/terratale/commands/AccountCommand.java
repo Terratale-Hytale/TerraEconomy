@@ -695,7 +695,7 @@ class AccountInviteAcceptSubCommand extends AbstractAsyncCommand {
         // Buscar banco
         Bank bank = Bank.find(account.getBankId());
         if (bank == null) {
-            player.sendMessage(Message.raw("§cBanco no encontrado"));
+            player.sendMessage(Message.raw("Banco no encontrado"));
             return CompletableFuture.completedFuture(null);
         }
 

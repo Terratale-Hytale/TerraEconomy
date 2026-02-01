@@ -10,11 +10,15 @@ repositories {
     maven {
         url = uri("https://jitpack.io")
     }
+    maven {
+        url = uri("https://repo.codemc.io/repository/creatorfromhell/")
+        name = "VaultUnlocked"
+    }
 }
 
 dependencies {
     compileOnly(files("libs/HytaleServer.jar"))
-    compileOnly(files("libs/Cassaforte-0.1.3.jar"))
+    compileOnly("net.cfh.vault:VaultUnlocked:2.18.3")
     implementation("org.xerial:sqlite-jdbc:3.47.1.0")
     implementation("mysql:mysql-connector-java:8.0.33")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.17.2")
@@ -46,4 +50,10 @@ tasks.jar {
     //         into("C:\\dev\\tools\\Hytale\\Server\\mods")
     //     }
     // }
+}
+
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(25))
+    }
 }

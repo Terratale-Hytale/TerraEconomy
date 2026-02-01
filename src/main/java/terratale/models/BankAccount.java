@@ -168,10 +168,10 @@ public class BankAccount extends Model {
             return accounts;
         }
         
-        String sql = "SELECT * FROM bank_accounts JOIN bank_account_owners ON bank_accounts.id = bank_account_owners.account_id WHERE bank_account_owners.owner_uuid = ?";
+        String sql = "SELECT * FROM bank_accounts JOIN bank_accounts_owners ON bank_accounts.id = bank_accounts_owners.account_id WHERE bank_accounts_owners.owner_uuid = ?";
         
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            pstmt.setObject(1, ownerUUID);
+            pstmt.setObject(1, ownerUUID.toString());
             ResultSet rs = pstmt.executeQuery();
             
             while (rs.next()) {

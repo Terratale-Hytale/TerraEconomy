@@ -64,6 +64,9 @@ class InvoiceCreateSubCommand extends AbstractAsyncCommand {
         String description = descriptionArg.get(context);
         UUID playerUUID = context.sender().getUuid();
 
+        description = description.replace("\"", "");
+        description = description.replace("\'", "");
+
         // Validar que el monto sea positivo
         if (amount <= 0) {
             context.sender().sendMessage(Message.raw("El monto debe ser mayor a 0."));

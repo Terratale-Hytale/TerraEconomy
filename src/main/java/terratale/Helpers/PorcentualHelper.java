@@ -1,15 +1,18 @@
 package terratale.Helpers;
 
+import java.math.BigDecimal;
+
 import terratale.models.BankAccount;
 import terratale.models.User;
 
 public abstract class PorcentualHelper {
-    public static double calculatePorcentual(double porcentualPoints) {
-        Double total = 0.0;
+    public static Double calculatePorcentual(BigDecimal porcentualPoints) {
+        Double total = getAllMoneyBank();
 
-        total = total + User.getAllMoney();
-        total = total + BankAccount.getAllAccountsMoney();
-
-        return porcentualPoints * total;
+        return Math.floor(porcentualPoints.multiply(BigDecimal.valueOf(total)).doubleValue());
     } 
+
+    public static Double getAllMoneyBank () {
+        return User.getAllMoney() + BankAccount.getAllAccountsMoney();
+    }
 }

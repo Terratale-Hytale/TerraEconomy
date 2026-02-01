@@ -326,6 +326,34 @@ public class Invoice extends Model {
         }
         return new Date(System.currentTimeMillis()).after(dueDate);
     }
+
+    public JsonNode getJsonEvents() {
+        try {
+            return MAPPER.readTree(this.events);
+        } catch (Exception e) {
+            logError("Failed to parse events JSON: " + e.getMessage());
+            e.printStackTrace();
+            return MAPPER.createObjectNode();
+        }
+    }
+
+    public boolean hasGeneratedByGovernmentSystem() {
+        JsonNode root = getJsonEvents();
+
+        JsonNode eventsNode = root.get("events");
+        if (eventsNode == null || !eventsNode.isArray()) {
+            return false;
+        }
+
+        for (JsonNode event : eventsNode) {
+            if ("generated_by".equals(event.path("type").asText()) &&
+                "gouvernement_system".equals(event.path("by").asText())) {
+                return true;
+            }
+        }
+
+        return false;
+    }
     
     // Getters
     public Integer getId() { return id; }

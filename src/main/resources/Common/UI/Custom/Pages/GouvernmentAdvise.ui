@@ -1,0 +1,5 @@
+Label #GouvernementAdviseID {
+    Style: (TextColor: #ff1d1d);
+    Text: "Factura gubernamental";
+    Anchor: (Width: 200, Height: 30);
+}

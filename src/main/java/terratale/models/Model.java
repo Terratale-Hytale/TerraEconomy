@@ -100,7 +100,9 @@ public abstract class Model {
             "bank_transactions",
             "account_invitations",
             "bank_invitations",
-            "invoices"
+            "invoices",
+            "schedule_payments",
+            "schedule_logs"
         };
         
         for (String migration : migrations) {
@@ -109,16 +111,22 @@ public abstract class Model {
     }
     
     private static void executeMigration(String fileName) {
-        try {
-            String path = "/migrations/" + fileName;
-            InputStream is = Model.class.getResourceAsStream(path);
+        if (connection == null) {
+            logError("No hay conexión; no se puede ejecutar migración: " + fileName);
+            return;
+        }
+
+        String path = "/migrations/" + fileName;
+
+        try (InputStream is = Model.class.getResourceAsStream(path)) {
             if (is == null) {
                 logError("Archivo de migración no encontrado: " + path);
-                return;
+                return; // seguir con la siguiente
             }
-            
+
             String content = new String(is.readAllBytes());
-            // Split into lines and remove comments
+
+            // Quitar comentarios de línea y líneas vacías
             String[] lines = content.split("\n");
             StringBuilder sqlBuilder = new StringBuilder();
             for (String line : lines) {
@@ -127,34 +135,41 @@ public abstract class Model {
                     sqlBuilder.append(line).append("\n");
                 }
             }
+
             String sql = sqlBuilder.toString().trim();
-            
-            // Deshabilitar auto-commit para ejecución por lotes
+            if (sql.isEmpty()) {
+                logInfo("Migración vacía (skip): " + fileName);
+                return;
+            }
+
             boolean originalAutoCommit = connection.getAutoCommit();
             connection.setAutoCommit(false);
-            
+
             try (Statement stmt = connection.createStatement()) {
-                if (!sql.isEmpty()) {
-                    logInfo("Ejecutando migración: " + fileName);
-                    stmt.execute(sql);
-                }
-                connection.commit(); // Confirmar la transacción
-                logInfo("Migración confirmada: " + fileName);
+                logInfo("Ejecutando migración: " + fileName);
+                stmt.execute(sql);
+
+                connection.commit();
+                logInfo("Migración OK: " + fileName);
+
             } catch (SQLException e) {
-                connection.rollback(); // Revertir en caso de error
-                logError("Error al ejecutar migración " + fileName + ": " + e.getMessage());
-                throw e;
+                // rollback SOLO de esta migración
+                try { connection.rollback(); } catch (SQLException ignored) {}
+
+                // IMPORTANTE: no relanzar => no corta el resto
+                logError("Migración FALLÓ (se continúa): " + fileName + " -> " + e.getMessage());
+
             } finally {
-                connection.setAutoCommit(originalAutoCommit); // Restaurar auto-commit original
+                try { connection.setAutoCommit(originalAutoCommit); } catch (SQLException ignored) {}
             }
-            
-            logInfo("Migración ejecutada: " + fileName);
-            
+
         } catch (Exception e) {
-            logError("Error al ejecutar migración " + fileName + ": " + e.getMessage());
+            // También sin relanzar
+            logError("Error leyendo/ejecutando migración (se continúa): " + fileName + " -> " + e.getMessage());
             e.printStackTrace();
         }
     }
+
     
     public static void close() {
         try {
